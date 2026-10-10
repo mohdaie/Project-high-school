@@ -24,17 +24,22 @@
     .dmg { position: absolute; transform: translate(-50%, -50%); font-size: 20px; font-weight: 900; color: var(--paper); text-shadow: 0 2px 0 var(--ink); animation: rise .8s ease-out forwards; }
     .dmg.big { font-size: 30px; color: var(--gold); }
     @keyframes rise { to { transform: translate(-50%, -150%); opacity: 0; } }
-    #pad { position: fixed; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: repeat(3, 60px); gap: 8px; }
-    #pad button { width: 60px; height: 52px; border-radius: 12px; border: 2px solid var(--line); background: #2c2740d9; color: var(--paper); font: 800 11px/1.1 system-ui, sans-serif; letter-spacing: .02em; touch-action: none; padding: 0; }
-    #pad button.on { background: var(--gold); color: var(--ink); border-color: var(--gold); }
-    #pad button.hot { border-color: var(--red); }
-    #pad button kbd { display: block; font: 600 9px system-ui; opacity: .55; margin-top: 3px; }
-    #stick { position: fixed; left: 0; top: 0; width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--line); background: #0003; pointer-events: none; }
-    #knob { position: absolute; left: 30px; top: 30px; width: 40px; height: 40px; border-radius: 50%; background: #f4ecdc99; }
+    #pad { position: fixed; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template: ". t ." 64px "s . c" 64px ". x ." 64px / 64px 64px 64px; gap: 2px; }
+    #pad button { width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--line); background: #2c2740d9; color: var(--paper); font: 800 10px/1 system-ui, sans-serif; touch-action: none; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+    #pad button span { font-size: 22px; line-height: 1; font-weight: 400; }
+    .tri span { color: #3fd0a5; } .sq span { color: #e98fd3; } .ci span { color: #ff6464; } .cr span { color: #7fa8ff; }
+    #pad button.on { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+    #pad button kbd { font: 600 9px system-ui; opacity: .55; }
+    #listBtn { position: fixed; top: calc(40px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); font: 700 12px system-ui, sans-serif; color: var(--paper); background: #2c2740d9; border: 2px solid var(--line); border-radius: 999px; padding: 6px 12px; }
+    #list { position: fixed; top: calc(76px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: min(340px, calc(100% - 32px)); max-height: calc(100% - 96px); overflow: auto; background: #1f1c2bf2; border: 2px solid var(--line); border-radius: 12px; padding: 10px 14px; font-weight: 500; }
+    #list table { border-collapse: collapse; width: 100%; } #list td { padding: 4px 0; } #list td:first-child { white-space: nowrap; padding-right: 12px; font-weight: 800; color: var(--gold); }
+    #list p { margin: 8px 0 0; font-size: 12px; opacity: .8; }
+    #stick { position: fixed; left: 0; top: 0; width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--line); background: #0003; pointer-events: none; }
+    #knob { position: absolute; left: 38px; top: 38px; width: 44px; height: 44px; border-radius: 50%; background: #f4ecdc99; transition: background .1s; } #knob.run { background: var(--gold); }
     #help { position: fixed; left: calc(16px + env(safe-area-inset-left, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); max-width: 40%; font-weight: 500; font-size: 12px; opacity: .6; }
     #loading { position: fixed; inset: 0; display: grid; place-items: center; background: var(--ink); }
     @media (hover: none) { #pad button kbd { display: none; } }
-    @media (max-height: 360px) { #pad button { height: 44px; } }
+    @media (max-height: 360px) { #pad { grid-template: ". t ." 54px "s . c" 54px ". x ." 54px / 54px 54px 54px; } #pad button { width: 54px; height: 54px; } }
     @media (prefers-reduced-motion: reduce) { .dmg { animation-duration: .01s; } }
   </style>
   <script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
@@ -50,17 +55,28 @@
     <div id="combo" hidden></div>
   </div>
   <div id="stick" hidden><div id="knob"></div></div>
-  <p id="help">Sentuh kiri skrin untuk bergerak. Kanan = mara, kiri = undur, atas/bawah = langkah keliling.<br>Keyboard: WASD gerak, J K L U I O H T serang, Space tahan.</p>
-  <div id="pad">
-    <button data-act="tumbuk">Tumbuk<kbd>J</kbd></button>
-    <button data-act="hayun" class="hot">Hayun<kbd>K</kbd></button>
-    <button data-act="kepit" class="hot">Kepit<kbd>H</kbd></button>
-    <button data-act="tendang">Tendang<kbd>L</kbd></button>
-    <button data-act="sepak">Sepak bawah<kbd>U</kbd></button>
-    <button data-act="lutut">Lutut<kbd>I</kbd></button>
-    <button data-act="rempuh">Rempuh<kbd>O</kbd></button>
-    <button data-act="ejek">Ejek<kbd>T</kbd></button>
-    <button data-act="tahan">Tahan<kbd>Space</kbd></button>
+  <p id="help">Sentuh kiri skrin untuk joystick. Tolak sikit jalan, tolak habis lari.<br>Keyboard: WASD gerak, Shift lari, I J L K butang.</p>
+  <div id="pad" aria-label="Butang serangan">
+    <button data-act="tendang" class="tri" style="grid-area:t"><span>△</span>Tendang<kbd>I</kbd></button>
+    <button data-act="tumbuk" class="sq" style="grid-area:s"><span>□</span>Tumbuk<kbd>J</kbd></button>
+    <button data-act="kasar" class="ci" style="grid-area:c"><span>○</span>Kasar<kbd>L</kbd></button>
+    <button data-act="tahan" class="cr" style="grid-area:x"><span>✕</span>Tahan<kbd>K</kbd></button>
+  </div>
+  <button id="listBtn" aria-expanded="false" aria-controls="list">Senarai gerak</button>
+  <div id="list" hidden>
+    <table>
+      <tr><td>□ □ □</td><td>Jab, straight, <b>hayun</b></td></tr>
+      <tr><td>← □</td><td>Uppercut</td></tr>
+      <tr><td>△</td><td><b>Tendang hayun</b> ke kepala</td></tr>
+      <tr><td>→ △</td><td>Push kick</td></tr>
+      <tr><td>← △</td><td>Sepak bawah</td></tr>
+      <tr><td>○ dekat</td><td>Kepit kepala</td></tr>
+      <tr><td>○ jauh</td><td>Rempuh</td></tr>
+      <tr><td>→ ○</td><td>Lutut</td></tr>
+      <tr><td>← ○</td><td>Ejek (isi stamina)</td></tr>
+      <tr><td>✕ tahan</td><td>Tutup muka</td></tr>
+    </table>
+    <p>→ mara ke lawan, ← undur. Tolak joystick sikit untuk jalan perlahan, tolak habis untuk lari.</p>
   </div>
   <div id="loading">Memuatkan gelanggang…</div>
   <script type="module" src="./src/brawler-view.js"></script>

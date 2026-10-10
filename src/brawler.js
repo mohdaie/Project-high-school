@@ -24,14 +24,14 @@ export const MOVES = {
     [.07, P({ hips: [.92, 0, -35, 0], chest: [0, -12, 0], head: [5, 47, 0], hL: [.06, 1.55, .9], eL: [1, -.3, 0] })],
     [.14, P({ hips: [.92, 0, -35, 0], chest: [0, -12, 0], head: [5, 47, 0], hL: [.06, 1.55, .9], eL: [1, -.3, 0] })], [.3, S]],
     hits: [{ t: [.05, .13], part: 'handL', dmg: 4, zone: 'head', knock: .12 }] },
-  cross: { name: 'Straight', cost: 8, dur: .38, chain: 'uppercut', chainAt: .22, keys: [[0, S],
+  cross: { name: 'Straight', cost: 8, dur: .38, chain: 'haymaker', chainAt: .22, keys: [[0, S],
     [.09, at(.08, { hips: [.92, 0, 10, 0], chest: [0, 30, 0], head: [5, -40, 0], hR: [-.02, 1.55, .95], eR: [-1, -.3, 0], ...GUARD_L, fR: [-.14, .1, -.2], rR: [30, -10] })],
     [.16, at(.08, { hips: [.92, 0, 10, 0], chest: [0, 30, 0], head: [5, -40, 0], hR: [-.02, 1.55, .95], eR: [-1, -.3, 0], ...GUARD_L, fR: [-.14, .1, -.2], rR: [30, -10] })], [.38, at(.08)]],
     hits: [{ t: [.07, .17], part: 'handR', dmg: 6, zone: 'head', knock: .25 }] },
   uppercut: { name: 'Uppercut', cost: 10, dur: .52, keys: [[0, S],
     [.11, P({ hips: [.82, 0, -35, 0], spine: [22, 0, 0], head: [0, 35, 0], hL: [.2, 1.1, .3], eL: [.6, -1, 0] })],
-    [.22, at(.07, { hips: [.95, 0, -5, 0], spine: [-6, 0, 0], chest: [0, -25, 0], head: [-5, 30, 0], hL: [.04, 1.75, .55], eL: [.3, -1, .2] })],
-    [.3, at(.07, { hips: [.95, 0, -5, 0], spine: [-6, 0, 0], chest: [0, -25, 0], head: [-5, 30, 0], hL: [.04, 1.75, .55], eL: [.3, -1, .2] })], [.52, at(.07)]],
+    [.22, at(.16, { hips: [.95, 0, -5, 0], spine: [-6, 0, 0], chest: [0, -25, 0], head: [-5, 30, 0], hL: [.04, 1.75, .55], eL: [.3, -1, .2] })],
+    [.3, at(.16, { hips: [.95, 0, -5, 0], spine: [-6, 0, 0], chest: [0, -25, 0], head: [-5, 30, 0], hL: [.04, 1.75, .55], eL: [.3, -1, .2] })], [.52, at(.16)]],
     hits: [{ t: [.16, .28], part: 'handL', dmg: 9, zone: 'head', knock: .45 }] },
   haymaker: { name: 'Haymaker', cost: 18, dur: .78, keys: [[0, S],
     [.2, P({ hips: [.9, 0, -50, 0], chest: [0, -20, 0], head: [5, 70, 0], hR: [-.5, 1.5, -.25], eR: [-.3, -1, -.5], hL: [.2, 1.45, .4] })],
@@ -49,16 +49,22 @@ export const MOVES = {
     [.26, at(.12, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })],
     [.34, at(.12, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })], [.6, at(.12)]],
     hits: [{ t: [.2, .34], part: 'footR', dmg: 7, zone: 'low', knock: .2 }] },
+  roundhouse: { name: 'Tendang hayun', cost: 16, dur: .82, keys: [[0, S],
+    [.16, at(.05, { hips: [.9, 0, 40, 0], chest: [0, 10, 0], head: [5, -50, 0], fR: [-.3, .7, .2], kR: [-1, 1, .5], rR: [30, 40], rL: [0, 60], hR: [-.3, 1.2, -.1], ...GUARD_L })],
+    [.3, at(.1, { hips: [.9, 0, 85, 0], spine: [-10, 0, -20], chest: [0, 0, 0], head: [10, -85, 10], fR: [.15, 1.45, .8], kR: [-.6, 1, .3], rR: [45, 90], rL: [0, 70], hR: [-.35, 1, -.35], eR: [-1, -1, 0], ...GUARD_L })],
+    [.38, at(.1, { hips: [.9, 0, 95, 0], spine: [-10, 0, -20], chest: [0, 0, 0], head: [10, -90, 10], fR: [.35, 1.35, .6], kR: [-.6, 1, .3], rR: [45, 100], rL: [0, 75], hR: [-.35, 1, -.35], eR: [-1, -1, 0], ...GUARD_L })],
+    [.55, at(.1, { hips: [.9, 0, 40, 0], chest: [0, 10, 0], head: [5, -50, 0], fR: [-.25, .55, 0], kR: [-1, 1, .5], rR: [30, 40], rL: [0, 50], ...GUARD_L })], [.82, at(.1)]],
+    hits: [{ t: [.25, .4], part: 'footR', dmg: 13, zone: 'head', knock: .9, heavy: true }] },
   knee: { name: 'Lutut', cost: 10, dur: .56, keys: [[0, S],
     [.12, P({ hL: [.12, 1.5, .7], hR: [-.1, 1.5, .7], eL: [.5, -1, 0], eR: [-.5, -1, 0] })],
-    [.24, at(.2, { hips: [.95, 0, 0, 0], spine: [-10, 0, 0], chest: [0, 0, 0], head: [5, 0, 0], hL: [.1, 1.3, .55], hR: [-.1, 1.3, .55], eL: [.5, -1, 0], eR: [-.5, -1, 0], fR: [-.08, .75, .25], kR: [0, .6, 1], rR: [40, 0] })],
-    [.32, at(.2, { hips: [.95, 0, 0, 0], spine: [-10, 0, 0], chest: [0, 0, 0], head: [5, 0, 0], hL: [.1, 1.3, .55], hR: [-.1, 1.3, .55], eL: [.5, -1, 0], eR: [-.5, -1, 0], fR: [-.08, .75, .25], kR: [0, .6, 1], rR: [40, 0] })], [.56, at(.2)]],
+    [.24, at(.27, { hips: [.95, 0, 0, 0], spine: [-10, 0, 0], chest: [0, 0, 0], head: [5, 0, 0], hL: [.1, 1.3, .55], hR: [-.1, 1.3, .55], eL: [.5, -1, 0], eR: [-.5, -1, 0], fR: [-.08, .75, .25], kR: [0, .6, 1], rR: [40, 0] })],
+    [.32, at(.27, { hips: [.95, 0, 0, 0], spine: [-10, 0, 0], chest: [0, 0, 0], head: [5, 0, 0], hL: [.1, 1.3, .55], hR: [-.1, 1.3, .55], eL: [.5, -1, 0], eR: [-.5, -1, 0], fR: [-.08, .75, .25], kR: [0, .6, 1], rR: [40, 0] })], [.56, at(.27)]],
     hits: [{ t: [.18, .32], part: 'kneeR', dmg: 10, zone: 'body', knock: .5 }] },
   barge: { name: 'Rempuh', cost: 14, dur: .72, keys: [[0, S],
     [.18, P({ hips: [.82, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.05, 1.3, .12], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.2, .075, -.28] })],
     [.27, at(.35, { hips: [.84, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.05, 1.3, .12], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .1], fR: [-.1, .2, .05] })],
-    [.36, at(.65, { hips: [.86, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.05, 1.3, .12], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.18, .075, -.2] })],
-    [.44, at(.65, { hips: [.86, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.05, 1.3, .12], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.18, .075, -.2] })], [.72, at(.65)]],
+    [.36, at(.8, { hips: [.86, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.05, 1.3, .12], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.18, .075, -.2] })],
+    [.44, at(.8, { hips: [.86, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.05, 1.3, .12], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.18, .075, -.2] })], [.72, at(.8)]],
     hits: [{ t: [.24, .42], part: 'shoulderL', dmg: 8, zone: 'body', knock: 1.5 }] },
   taunt: { name: 'Ejek', cost: 0, dur: 1.3, gain: 25, keys: [[0, S],
     [.3, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 0, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10] })],
@@ -78,18 +84,31 @@ MOVES.headlock = { name: 'Kepit kepala', cost: 20, dur: 2.4, reach: 1.15, grab: 
   hits: [.7, 1.15, 1.6].map(t => ({ t: [t - .05, t + .05], part: 'handR', dmg: 5, zone: 'head', knock: 0, auto: true }))
     .concat({ t: [2, 2.12], part: 'handL', dmg: 2, zone: 'body', knock: 1.2, auto: true }) };
 
-// Buttons: one tap each. Repeated Tumbuk chains jab, straight, uppercut.
-export const BUTTONS = { tumbuk: 'jab', hayun: 'haymaker', tendang: 'pushKick', sepak: 'lowKick', lutut: 'knee', rempuh: 'barge', kepit: 'headlock', ejek: 'taunt' };
+// Four buttons, like a pad's face buttons; the stick direction picks the
+// variant. Square taps chain jab, straight, haymaker.
+//   square  tumbuk: jab chain · back: uppercut
+//   triangle tendang: tendang hayun · forward: push kick · back: low kick
+//   circle  kasar: close: headlock, else barge · forward: knee · back: taunt
+//   cross   tahan: hold to guard
+export const BUTTONS = { tumbuk: 'square', tendang: 'triangle', kasar: 'circle', tahan: 'cross' };
+export const CLOSE = .95;
+export function pick(button, dir = 0, near = Infinity) {
+  if (button === 'tumbuk') return dir < 0 ? 'uppercut' : 'jab';
+  if (button === 'tendang') return dir > 0 ? 'pushKick' : dir < 0 ? 'lowKick' : 'roundhouse';
+  if (button === 'kasar') return dir > 0 ? 'knee' : dir < 0 ? 'taunt' : near <= CLOSE ? 'headlock' : 'barge';
+  return null;
+}
 export const STAMINA = { max: 100, regen: 24, rest: .45 };
 
 export const newFighter = () => ({ move: null, t: 0, seq: 0, stamina: STAMINA.max, rest: 0, queued: null, guard: false });
 function start(f, key) { const m = MOVES[key]; f.move = key; f.t = 0; f.seq++; f.queued = null; f.stamina -= m.cost; f.rest = STAMINA.rest; return { move: key }; }
 // Press a button. `near` is the distance to the opponent (for the headlock).
-export function press(f, button, near = Infinity) {
-  const key = BUTTONS[button]; if (!key) return null;
+// dir: the stick toward the opponent (1), away (-1) or neither (0).
+export function press(f, button, dir = 0, near = Infinity) {
+  const key = pick(button, dir, near); if (!key) return null;
   if (f.move) {
     const m = MOVES[f.move];
-    if (button === 'tumbuk' && m.chain && !f.queued) { f.queued = m.chain; return { queued: m.chain }; }
+    if (key === 'jab' && m.chain && !f.queued) { f.queued = m.chain; return { queued: m.chain }; }
     return null;
   }
   if (key === 'headlock' && near > MOVES.headlock.reach) return { fail: 'jauh' };

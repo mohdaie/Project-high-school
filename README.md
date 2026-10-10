@@ -2,23 +2,25 @@
 
 Game lawan 1 lawan 1 untuk telefon. Watak remaja bertarung di satu gelanggang guna silat, boxing, MMA dan capoeira. Lawan komputer dulu.
 
-## Status: v0.2.0, gelanggang latihan
+## Status: v0.3.0, gelanggang latihan
 
 `index.html` ialah gelanggang latihan. **Jai**, budak gaduh jalanan tanpa disiplin tertentu, lawan kawan latih yang cuma terima pukulan. Kedua-duanya mannequin bersendi buat masa ni.
 
+Empat butang macam pad PS5. Arah joystick (ke lawan atau undur) pilih variasi setiap butang.
+
 | Butang | Keyboard | Gerak |
 |---|---|---|
-| Tumbuk | J | Jab. Tekan lagi untuk combo: jab, straight, uppercut |
-| Hayun | K | Haymaker: hayun besar, lambat tapi sakit |
-| Tendang | L | Push kick: tolak lawan ke belakang |
-| Sepak bawah | U | Low kick ke peha |
-| Lutut | I | Pegang kolar, lutut ke perut |
-| Rempuh | O | Rempuh guna bahu |
-| Kepit | H | Headlock: kepit kepala, tiga uppercut, tolak. Kena dekat dulu |
-| Ejek | T | Ejek lawan, isi semula stamina |
-| Tahan | Space (tahan) | Tutup muka |
+| □ Tumbuk | J | Jab. Tekan 3 kali: jab, straight, **hayun** (haymaker) |
+| ← □ | A + J | Uppercut |
+| △ Tendang | I | **Tendang hayun** (roundhouse ke kepala) |
+| → △ | D + I | Push kick, tolak lawan ke belakang |
+| ← △ | A + I | Sepak bawah ke peha |
+| ○ Kasar | L | Dekat: kepit kepala (headlock, 3 uppercut, tolak). Jauh: rempuh guna bahu |
+| → ○ | D + L | Lutut |
+| ← ○ | A + L | Ejek, isi semula stamina |
+| ✕ Tahan | K (tahan) | Tutup muka |
 
-Sentuh separuh kiri skrin untuk joystick: kanan mara, kiri undur, atas dan bawah langkah keliling lawan. Keyboard guna WASD atau anak panah.
+Joystick (sentuh separuh kiri skrin) ada kelajuan dinamik: tolak sikit jalan perlahan, tolak habis lari. Bila lari, Jai jadi rendah, condong ke depan dan tangan berayun. Keyboard: WASD atau anak panah jalan, tambah Shift untuk lari. Butang "Senarai gerak" di atas tunjuk semua gerak.
 
 Setiap serangan guna stamina. Kalau habis, keluar "Penat!" dan kena tunggu sekejap. Pukulan yang kena beri hitstop, gegar kamera, bunyi dan nombor damage. Pukulan berturut-turut dalam 1.1 saat dikira combo. Bila HP kawan latih habis, dia jatuh (K.O.) dan bangun semula.
 

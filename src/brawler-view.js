@@ -25,7 +25,8 @@ const foe = { m: createMannequin(scene, { body: 0x8fa3b8, joint: 0x3e4a5c }), po
 
 // ---- input: keyboard, a floating stick on the left, buttons on the right
 const keys = new Set(), stick = { id: null, x: 0, y: 0, ox: 0, oy: 0 };
-const KEYMAP = { KeyJ: 'tumbuk', KeyK: 'hayun', KeyL: 'tendang', KeyU: 'sepak', KeyI: 'lutut', KeyO: 'rempuh', KeyH: 'kepit', KeyT: 'ejek' };
+// Keyboard face buttons sit in the same diamond: I triangle, J square, L circle, K cross.
+const KEYMAP = { KeyJ: 'tumbuk', KeyI: 'tendang', KeyL: 'kasar' };
 addEventListener('keydown', e => { if (e.repeat) return; keys.add(e.code); if (KEYMAP[e.code]) act(KEYMAP[e.code]); audio(); });
 addEventListener('keyup', e => keys.delete(e.code));
 let guardHeld = false;
@@ -35,23 +36,34 @@ for (const b of document.querySelectorAll('#pad button')) {
   for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => { b.classList.remove('on'); if (a === 'tahan') guardHeld = false; });
 }
 const base = $('stick'), knob = $('knob');
-canvas.addEventListener('pointerdown', e => { if (stick.id !== null || e.clientX > innerWidth * .5) return; audio(); stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY; canvas.setPointerCapture(e.pointerId); base.hidden = false; base.style.transform = `translate(${e.clientX - 50}px,${e.clientY - 50}px)`; moveStick(e); });
+$('listBtn').onclick = () => { const l = $('list'); l.hidden = !l.hidden; $('listBtn').setAttribute('aria-expanded', !l.hidden); };
+canvas.addEventListener('pointerdown', e => { if (stick.id !== null || e.clientX > innerWidth * .5) return; audio(); stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY; canvas.setPointerCapture(e.pointerId); base.hidden = false; base.style.transform = `translate(${e.clientX - 60}px,${e.clientY - 60}px)`; moveStick(e); });
 canvas.addEventListener('pointermove', e => { if (e.pointerId === stick.id) moveStick(e); });
 const endStick = e => { if (e.pointerId !== stick.id) return; stick.id = null; stick.x = stick.y = 0; base.hidden = true; };
 canvas.addEventListener('pointerup', endStick); canvas.addEventListener('pointercancel', endStick);
+const R = 50;
 function moveStick(e) {
-  let dx = e.clientX - stick.ox, dy = e.clientY - stick.oy; const l = Math.hypot(dx, dy), k = l > 42 ? 42 / l : 1; dx *= k; dy *= k;
-  stick.x = dx / 42; stick.y = -dy / 42; knob.style.transform = `translate(${dx}px,${dy}px)`;
+  let dx = e.clientX - stick.ox, dy = e.clientY - stick.oy; const l = Math.hypot(dx, dy), k = l > R ? R / l : 1; dx *= k; dy *= k;
+  stick.x = dx / R; stick.y = -dy / R; knob.style.transform = `translate(${dx}px,${dy}px)`; knob.classList.toggle('run', Math.hypot(stick.x, stick.y) > .8);
 }
 
 // ---- feedback: popups, damage numbers, sound
 let popTimer = 0, combo = 0, comboAt = -9, now = 0;
 function pop(text, cls = '') { const p = $('pop'); p.textContent = text; p.className = cls; popTimer = .9; }
+// The stick toward the partner (1) or away (-1) picks each button's variant.
+const stickDir = () => { const x = input().x; return x > .45 ? 1 : x < -.45 ? -1 : 0; };
 function act(button) {
-  const r = press(me.f, button, me.pos.distanceTo(foe.pos));
+  const r = press(me.f, button, stickDir(), me.pos.distanceTo(foe.pos));
   if (r?.move) { me.fwd = 0; pop(MOVES[r.move].name); }
   else if (r?.fail === 'penat') pop('Penat!', 'warn');
   else if (r?.fail === 'jauh') pop('Dekat lagi!', 'warn');
+}
+// Stick or keys as one analogue input; keys walk, Shift runs.
+function input() {
+  const k = (a, b) => (keys.has(a) || keys.has(b) ? 1 : 0), run = keys.has('ShiftLeft') || keys.has('ShiftRight') ? 1 : .45;
+  let x = stick.x + (k('KeyD', 'ArrowRight') - k('KeyA', 'ArrowLeft')) * run, y = stick.y + (k('KeyW', 'ArrowUp') - k('KeyS', 'ArrowDown')) * run;
+  const m = Math.hypot(x, y); if (m > 1) { x /= m; y /= m; }
+  return { x, y, m: Math.min(1, m) };
 }
 let ctx = null;
 function audio() { $('help').hidden = true; if (!ctx) try { ctx = new AudioContext(); } catch { ctx = false; } }
@@ -88,32 +100,40 @@ function checkHits(d) {
 }
 
 // ---- loop
-const SPEED = { fwd: 1.7, back: 1.25, side: 1.35 }, FREQ = 2.3;
+// Top speeds at full stick; a light push walks. Speed rises with the push.
+const SPEED = { fwd: 3.4, back: 1.8, side: 2.2, guard: .8 }, FREQ = 2.1, DEAD = .12;
 const d = new T.Vector3(), n = new T.Vector3(), want = new T.Vector3(), camPos = new T.Vector3(0, 1.4, 4.5), look = new T.Vector3(0, 1, 0);
 const xw = new T.Vector3(), zw = new T.Vector3(), held = new T.Vector3();
 function walk(p, v, dt) {
   const speed = v.length(); if (speed < .05) { p.hips[0] += Math.sin(now * 6) * .008; return p; }
-  me.phase += dt * Math.PI * 2 * FREQ * Math.min(1, .5 + speed / 2);
+  const run = T.MathUtils.smoothstep(speed, 1.6, 3), freq = FREQ * (1 + .55 * run);
+  me.phase += dt * Math.PI * 2 * freq * Math.min(1, .5 + speed / 2);
   xw.set(Math.cos(me.yaw), 0, -Math.sin(me.yaw)); zw.set(Math.sin(me.yaw), 0, Math.cos(me.yaw));
-  const lx = v.dot(xw) / speed, lz = v.dot(zw) / speed, amp = speed / FREQ / 4;
+  const lx = v.dot(xw) / speed, lz = v.dot(zw) / speed, amp = speed / freq / 4;
   for (const [f, o] of [['fL', 0], ['fR', Math.PI]]) {
     const s = Math.sin(me.phase + o), c = Math.cos(me.phase + o);
-    p[f][0] += lx * amp * s; p[f][2] += lz * amp * s; p[f][1] += Math.max(0, c) * .08;
+    p[f][0] += lx * amp * s; p[f][2] += lz * amp * s; p[f][1] += Math.max(0, c) * (.07 + .13 * run);
   }
-  p.hips[0] -= .02 * Math.abs(Math.sin(me.phase * 2));
+  // Running: lower, lean into it, hands drop from the guard and pump.
+  p.hips[0] -= (.02 + .04 * run) * Math.abs(Math.sin(me.phase * 2)) + .03 * run;
+  p.spine[0] += 16 * run * Math.max(0, lz);
+  for (const [h, o] of [['hL', Math.PI], ['hR', 0]]) { p[h][1] -= .18 * run; p[h][2] += Math.sin(me.phase + o) * .16 * run * Math.max(0, lz); }
   return p;
 }
 function step(dt) {
   now += dt;
   d.subVectors(foe.pos, me.pos).setY(0); const sep = d.length(); d.normalize(); n.set(-d.z, 0, d.x);
   // Move
-  let jx = stick.x + (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
-  let jy = stick.y + (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
-  jx = T.MathUtils.clamp(jx, -1, 1); jy = T.MathUtils.clamp(jy, -1, 1);
-  me.f.guard = (guardHeld || keys.has('Space')) && !me.f.move;
+  // Dynamic speed: past the dead zone, speed grows with the push (eased, so
+  // small pushes give fine steps and a full push runs).
+  const { x: jx, y: jy, m } = input(), push = Math.pow(Math.max(0, m - DEAD) / (1 - DEAD), 1.5), ux = m ? jx / m : 0, uy = m ? jy / m : 0;
+  me.f.guard = (guardHeld || keys.has('KeyK') || keys.has('Space')) && !me.f.move;
   want.set(0, 0, 0);
-  if (!me.f.move && foe.hold <= 0) want.addScaledVector(d, jx * (jx > 0 ? SPEED.fwd : SPEED.back)).addScaledVector(n, -jy * SPEED.side).multiplyScalar(me.f.guard ? .45 : 1);
-  me.vel.lerp(want, 1 - Math.exp(-dt * 14)); me.pos.addScaledVector(me.vel, dt);
+  if (!me.f.move && foe.hold <= 0) {
+    want.addScaledVector(d, ux * push * (ux > 0 ? SPEED.fwd : SPEED.back)).addScaledVector(n, -uy * push * SPEED.side);
+    if (me.f.guard) want.clampLength(0, SPEED.guard);
+  }
+  me.vel.lerp(want, 1 - Math.exp(-dt * 10)); me.pos.addScaledVector(me.vel, dt);
   me.yaw = Math.atan2(d.x, d.z);
   const started = tick(me.f, dt); if (started) { me.fwd = 0; pop(MOVES[started].name); }
   // Pose
@@ -169,4 +189,4 @@ renderer.setAnimationLoop(() => {
 });
 step(0); $('loading').hidden = true;
 // For automated checks: run frames and press buttons without a real clock.
-window.brawler = { act, step, me, foe, debug, reach: (part, foeName) => me.m.point(part, pt).distanceTo(foe.m.point(foeName, tp)), TARGETS, set stick(v) { stick.x = v[0]; stick.y = v[1]; } };
+window.brawler = { act, step, me, foe, debug, input, reach: (part, foeName) => me.m.point(part, pt).distanceTo(foe.m.point(foeName, tp)), TARGETS, set stick(v) { stick.x = v[0]; stick.y = v[1]; } };
