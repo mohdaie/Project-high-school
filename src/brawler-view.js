@@ -224,6 +224,8 @@ function step(dt) {
   camPos.lerp(want, 1 - Math.exp(-dt * 4)); look.lerp(mid.setY(.92), 1 - Math.exp(-dt * 8));
   camera.position.copy(camPos); if (shake > 0) { camera.position.x += (Math.random() - .5) * shake; camera.position.y += (Math.random() - .5) * shake; shake = Math.max(0, shake - dt); }
   camera.lookAt(look);
+  // Close-up views for checks (window.brawler.debug.cam = 'side' | 'front').
+  if (debug.cam) { const c = me.pos.clone().setY(1.35); camera.position.copy(c).addScaledVector(debug.cam === 'side' ? n : d, 1.3).addScaledVector(debug.cam === 'side' ? d : n, debug.cam === 'side' ? .2 : 1.2); camera.lookAt(c.addScaledVector(d, .2)); }
   // HUD
   $('stam').style.width = `${me.f.stamina}%`; $('stam').classList.toggle('low', me.f.stamina < 20); $('hp').style.width = `${foe.hp}%`;
   if (popTimer > 0 && (popTimer -= dt) <= 0) $('pop').textContent = '';

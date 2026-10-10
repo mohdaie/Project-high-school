@@ -57,14 +57,16 @@ function aim(g, dir, front) {
   g.parent.getWorldQuaternion(qP); g.quaternion.copy(qP.invert().multiply(qW)); g.updateMatrixWorld(true);
 }
 // Two-bone IK: base joint `a`, middle joint `b`, end target `t` and bend
-// direction `pole` (both in the fighter's space).
-function reach(root, a, b, la, lb, t, pole) {
+// direction `pole` (both in the fighter's space). A segment's front (+z at
+// rest) faces where the joint bends from: a knee bends toward its front, an
+// elbow away from it (`back`), so neither limb twists as it bends.
+function reach(root, a, b, la, lb, t, pole, back = false) {
   a.getWorldPosition(vS); root.localToWorld(vT.fromArray(t)); vP.fromArray(pole).transformDirection(root.matrixWorld);
   vD.subVectors(vT, vS); const d = T.MathUtils.clamp(vD.length(), .05, la + lb - 1e-3); vD.normalize();
   const x = (la * la - lb * lb + d * d) / (2 * d), h = Math.sqrt(Math.max(0, la * la - x * x));
   vF.copy(vP).addScaledVector(vD, -vP.dot(vD)); if (vF.lengthSq() < 1e-6) vF.set(0, 1, 0); vF.normalize();
   vE.copy(vS).addScaledVector(vD, x).addScaledVector(vF, h);
-  aim(a, vE.sub(vS), vF);
+  aim(a, vE.sub(vS), back ? vF.negate() : vF);
   b.getWorldPosition(vS); aim(b, vT.sub(vS), vF);
 }
 function applyPose(root, j, p) {
@@ -72,8 +74,8 @@ function applyPose(root, j, p) {
   j.hips.position.y = p.hips[0]; j.hips.rotation.set(p.hips[1] * D, p.hips[2] * D, p.hips[3] * D);
   r(j.spine, p.spine); r(j.chest, p.chest); r(j.neck, p.neck); r(j.head, p.head);
   root.updateMatrixWorld(true);
-  reach(root, j.shoulderL, j.elbowL, LIMB.upper, LIMB.fore, p.hL, p.eL);
-  reach(root, j.shoulderR, j.elbowR, LIMB.upper, LIMB.fore, p.hR, p.eR);
+  reach(root, j.shoulderL, j.elbowL, LIMB.upper, LIMB.fore, p.hL, p.eL, true);
+  reach(root, j.shoulderR, j.elbowR, LIMB.upper, LIMB.fore, p.hR, p.eR, true);
   reach(root, j.hipL, j.kneeL, LIMB.thigh, LIMB.shin, p.fL, p.kL);
   reach(root, j.hipR, j.kneeR, LIMB.thigh, LIMB.shin, p.fR, p.kR);
   // Feet stay level with the ground (pitched by r*[0]) and turned by r*[1].
