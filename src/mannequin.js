@@ -19,9 +19,9 @@ export function createMannequin(scene, { body = 0xd9a36c, joint = 0x6b4630, band
   const hips = node('hips', root, 0, .92, 0);
   add(hips, new T.BoxGeometry(.3, .14, .18), skin, 0, -.02, 0);
   const spine = node('spine', hips, 0, .06, 0); ball(spine, .07);
-  add(spine, new T.CapsuleGeometry(.11, .1, 3, 8), skin, 0, .1, 0);
+  const belly = add(spine, new T.CapsuleGeometry(.11, .1, 3, 8), skin, 0, .1, 0);
   const chest = node('chest', spine, 0, .2, 0);
-  add(chest, new T.BoxGeometry(.36, .26, .2), skin, 0, .1, 0);
+  const ribs = add(chest, new T.BoxGeometry(.36, .26, .2), skin, 0, .1, 0);
   const neck = node('neck', chest, 0, .25, 0); add(neck, new T.CylinderGeometry(.045, .05, .1, 8), dark, 0, .04, 0);
   const head = node('head', neck, 0, .09, 0);
   add(head, new T.SphereGeometry(.11, 14, 10), skin, 0, .1, 0).scale.set(.9, 1.08, 1);
@@ -40,7 +40,10 @@ export function createMannequin(scene, { body = 0xd9a36c, joint = 0x6b4630, band
   const points = { handL: [j.handL, 0, -.05, 0], handR: [j.handR, 0, -.05, 0], footL: [j.ankleL, 0, -.03, .12], footR: [j.ankleR, 0, -.03, .12], kneeL: [j.kneeL, 0, 0, .06], kneeR: [j.kneeR, 0, 0, .06], chest: [j.chest, 0, .12, .1], shoulderL: [j.shoulderL, .03, 0, 0], head: [j.head, 0, .1, 0], hips: [j.hips, 0, 0, 0] };
   const point = (name, out = new T.Vector3()) => { const [o, x, y, z] = points[name]; return o.localToWorld(out.set(x, y, z)); };
   const flash = v => { for (const m of [skin, dark]) m.emissive.setScalar(v); };
-  return { root, j, meshes, point, flash, pose: p => applyPose(root, j, p) };
+  // Breath (-1 out .. 1 in): the ribcage widens and deepens, the belly draws in.
+  const breathe = v => { ribs.scale.set(1 + .025 * v, 1 + .015 * v, 1 + .07 * v); belly.scale.set(1 - .02 * v, 1, 1 - .05 * v); ribs.position.z = .006 * v;
+    for (const m of [ribs, belly]) m.parent.children.filter(c => c.userData.ink && c.geometry === m.geometry).forEach(h => { h.scale.copy(m.scale); h.position.copy(m.position); }); };
+  return { root, j, meshes, point, flash, breathe, pose: p => applyPose(root, j, p) };
 }
 
 const vS = new T.Vector3(), vT = new T.Vector3(), vP = new T.Vector3(), vE = new T.Vector3(), vD = new T.Vector3(), vX = new T.Vector3(), vY = new T.Vector3(), vZ = new T.Vector3(), vF = new T.Vector3();

@@ -2,6 +2,7 @@ import * as T from 'three';
 import { inkViewport } from './illustration.js';
 import { createMannequin } from './mannequin.js';
 import { sample, mix } from './keyframes.js';
+import { newBreath, breathe } from './breath.js';
 import { STANCE, GUARD, PARTNER, MOVES, newFighter, press, tick, activeHits, grabbing } from './brawler.js';
 
 // Training ring: Jai against a sparring partner who takes the hits.
@@ -21,8 +22,8 @@ const floor = new T.Mesh(new T.CircleGeometry(RING + .5, 56), new T.MeshLambertM
 const line = new T.Mesh(new T.RingGeometry(RING, RING + .12, 56), new T.MeshBasicMaterial({ color: 0xd8322a })); line.rotation.x = -Math.PI / 2; line.position.y = .003; scene.add(line);
 const outer = new T.Mesh(new T.CircleGeometry(30, 32), new T.MeshLambertMaterial({ color: 0x1b1824 })); outer.rotation.x = -Math.PI / 2; outer.position.y = -.01; scene.add(outer);
 
-const me = { m: createMannequin(scene, { body: 0xd9a36c, joint: 0x5b3a28, band: 0xd8322a }), f: newFighter({ tireless: true }), pos: new T.Vector3(-.6, 0, 0), yaw: 0, vel: new T.Vector3(), phase: 0, fwd: 0, seq: 0 };
-const foe = { m: createMannequin(scene, { body: 0x8fa3b8, joint: 0x3e4a5c }), pos: new T.Vector3(.6, 0, 0), yaw: 0, hp: 100, react: PARTNER.idle, rw: 0, knock: new T.Vector3(), hold: 0, down: -1, flash: 0 };
+const me = { m: createMannequin(scene, { body: 0xd9a36c, joint: 0x5b3a28, band: 0xd8322a }), f: newFighter({ tireless: true }), pos: new T.Vector3(-.6, 0, 0), yaw: 0, vel: new T.Vector3(), phase: 0, fwd: 0, seq: 0, breath: newBreath() };
+const foe = { m: createMannequin(scene, { body: 0x8fa3b8, joint: 0x3e4a5c }), pos: new T.Vector3(.6, 0, 0), yaw: 0, hp: 100, react: PARTNER.idle, rw: 0, knock: new T.Vector3(), hold: 0, down: -1, flash: 0, breath: newBreath() };
 
 // ---- input: keyboard, a floating stick on the left, buttons on the right
 const keys = new Set(), stick = { id: null, x: 0, y: 0, ox: 0, oy: 0 };
@@ -115,8 +116,24 @@ function checkHits(d) {
 const SPEED = { fwd: 3.4, back: 1.8, side: 2.2, guard: .8 }, FREQ = 2.1, DEAD = .12;
 const d = new T.Vector3(), n = new T.Vector3(), want = new T.Vector3(), camPos = new T.Vector3(0, 1.4, 4.5), look = new T.Vector3(0, 1, 0);
 const xw = new T.Vector3(), zw = new T.Vector3(), held = new T.Vector3();
+// Standing by: weight rocks between the feet, the head and hands drift,
+// knees give a little; livelier as effort builds.
+function sway(p, effort) {
+  const a = .6 + .6 * effort, w = Math.sin(now * 1.7), b = Math.sin(now * 3.4 + 1);
+  p.hips[0] -= (.012 + .01 * effort) * (1 + b) / 2; p.hips[2] += 4 * a * w; p.hips[3] += 1.5 * a * w;
+  p.chest[1] -= 2 * a * w; p.head[0] += 2 * a * Math.sin(now * 2.3); p.head[1] += 2.5 * a * Math.sin(now * 1.3);
+  p.hL[0] += .015 * a * Math.sin(now * 2.1); p.hL[1] += .02 * a * Math.sin(now * 2.6 + 2); p.hR[1] += .015 * a * Math.sin(now * 2.2 + 4);
+  return p;
+}
+// Breath on top of any pose: the chest lifts and opens, shoulders and hands
+// rise with it, the chin lifts a touch.
+function breath(p, v, m) {
+  p.spine[0] -= 2.5 * v; p.chest[0] -= 2 * v; p.head[0] += 1.5 * v;
+  for (const h of ['hL', 'hR']) p[h][1] += .018 * v;
+  p.hips[0] += .004 * v; m.breathe(v); return p;
+}
 function walk(p, v, dt) {
-  const speed = v.length(); if (speed < .05) { p.hips[0] += Math.sin(now * 6) * .008; return p; }
+  const speed = v.length(); if (speed < .05) return sway(p, me.breath.effort);
   const run = T.MathUtils.smoothstep(speed, 1.6, 3), freq = FREQ * (1 + .55 * run);
   me.phase += dt * Math.PI * 2 * freq * Math.min(1, .5 + speed / 2);
   xw.set(Math.cos(me.yaw), 0, -Math.sin(me.yaw)); zw.set(Math.sin(me.yaw), 0, Math.cos(me.yaw));
@@ -151,6 +168,7 @@ function step(dt) {
   let p;
   if (me.f.move) { p = sample(MOVES[me.f.move].keys, me.f.t); const f = p.fwd[0]; me.pos.addScaledVector(d, Math.max(0, f - me.fwd)); me.fwd = f; if (me.assist && me.f.t <= me.assistUntil + dt) me.pos.addScaledVector(d, me.assist * dt); }
   else p = walk(mix(me.f.guard ? GUARD : STANCE, STANCE, 0), me.vel, dt);
+  breath(p, breathe(me.breath, dt, { moving: Math.min(1, me.vel.length() / SPEED.fwd), attacking: !!me.f.move && me.f.move !== 'taunt' }), me.m);
   checkHits(d);
   // Partner
   const grab = grabbing(me.f); foe.hold = T.MathUtils.clamp(foe.hold + (grab ? dt * 6 : -dt * 4), 0, 1);
@@ -169,6 +187,9 @@ function step(dt) {
   if (foe.hold <= 0 && foe.down < 0) foe.pos.lerp(v3.copy(me.pos).addScaledVector(d, REST), dt * .25);
   let q = mix(PARTNER.idle, foe.react, foe.rw); q.hips[0] += Math.sin(now * 2.2) * .006;
   if (foe.hold > 0) q = mix(q, PARTNER.held, foe.hold);
+  // The partner breathes harder after taking hits.
+  if (foe.rw > .5) foe.breath.effort = Math.min(1, foe.breath.effort + dt * 2);
+  breath(q, breathe(foe.breath, dt), foe.m);
   foe.rw *= Math.exp(-dt * 6); foe.flash *= Math.exp(-dt * 14);
   foe.m.root.rotation.x = 0;
   if (foe.down >= 0) {
