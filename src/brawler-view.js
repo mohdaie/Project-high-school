@@ -12,15 +12,16 @@ const canvas = $('view'), renderer = new T.WebGLRenderer({ canvas, antialias: tr
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.outputColorSpace = T.SRGBColorSpace; renderer.shadowMap.enabled = true;
 const scene = new T.Scene(); scene.background = new T.Color(0x1f1c2b); scene.fog = new T.Fog(0x1f1c2b, 9, 22);
 const camera = new T.PerspectiveCamera(42, 1, .05, 60);
-scene.add(new T.HemisphereLight(0xfff1dc, 0x463a52, 1.15));
+scene.add(new T.HemisphereLight(0xfff1dc, 0x3a4660, 1.15));
+const rim = new T.DirectionalLight(0x9fc4ff, .9); rim.position.set(-3, 4, -5); scene.add(rim);
 const sun = new T.DirectionalLight(0xffe2bd, 1.5); sun.position.set(2, 7, 3); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
 Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5 }); scene.add(sun);
 const RING = 3.6, REST = .95;
-const floor = new T.Mesh(new T.CircleGeometry(RING + .5, 56), new T.MeshLambertMaterial({ color: 0x9a3d2e })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
-const line = new T.Mesh(new T.RingGeometry(RING, RING + .12, 56), new T.MeshBasicMaterial({ color: 0xf2e6cf })); line.rotation.x = -Math.PI / 2; line.position.y = .003; scene.add(line);
-const outer = new T.Mesh(new T.CircleGeometry(30, 32), new T.MeshLambertMaterial({ color: 0x2b2636 })); outer.rotation.x = -Math.PI / 2; outer.position.y = -.01; scene.add(outer);
+const floor = new T.Mesh(new T.CircleGeometry(RING + .5, 56), new T.MeshLambertMaterial({ color: 0x3a4660 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const line = new T.Mesh(new T.RingGeometry(RING, RING + .12, 56), new T.MeshBasicMaterial({ color: 0xd8322a })); line.rotation.x = -Math.PI / 2; line.position.y = .003; scene.add(line);
+const outer = new T.Mesh(new T.CircleGeometry(30, 32), new T.MeshLambertMaterial({ color: 0x1b1824 })); outer.rotation.x = -Math.PI / 2; outer.position.y = -.01; scene.add(outer);
 
-const me = { m: createMannequin(scene, { body: 0xd9a36c, joint: 0x5b3a28, band: 0xd8322a }), f: newFighter(), pos: new T.Vector3(-.6, 0, 0), yaw: 0, vel: new T.Vector3(), phase: 0, fwd: 0, seq: 0 };
+const me = { m: createMannequin(scene, { body: 0xd9a36c, joint: 0x5b3a28, band: 0xd8322a }), f: newFighter({ tireless: true }), pos: new T.Vector3(-.6, 0, 0), yaw: 0, vel: new T.Vector3(), phase: 0, fwd: 0, seq: 0 };
 const foe = { m: createMannequin(scene, { body: 0x8fa3b8, joint: 0x3e4a5c }), pos: new T.Vector3(.6, 0, 0), yaw: 0, hp: 100, react: PARTNER.idle, rw: 0, knock: new T.Vector3(), hold: 0, down: -1, flash: 0 };
 
 // ---- input: keyboard, a floating stick on the left, buttons on the right
@@ -36,6 +37,7 @@ for (const b of document.querySelectorAll('#pad button')) {
   for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => { b.classList.remove('on'); if (a === 'tahan') guardHeld = false; });
 }
 const base = $('stick'), knob = $('knob');
+$('tiredBtn').onclick = () => { me.f.tireless = !me.f.tireless; me.f.stamina = 100; $('tiredBtn').textContent = me.f.tireless ? 'Penat: tak' : 'Penat: ya'; $('stamWrap').hidden = me.f.tireless; };
 $('listBtn').onclick = () => { const l = $('list'); l.hidden = !l.hidden; $('listBtn').setAttribute('aria-expanded', !l.hidden); };
 canvas.addEventListener('pointerdown', e => { if (stick.id !== null || e.clientX > innerWidth * .5) return; audio(); stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY; canvas.setPointerCapture(e.pointerId); base.hidden = false; base.style.transform = `translate(${e.clientX - 60}px,${e.clientY - 60}px)`; moveStick(e); });
 canvas.addEventListener('pointermove', e => { if (e.pointerId === stick.id) moveStick(e); });
@@ -54,9 +56,18 @@ function pop(text, cls = '') { const p = $('pop'); p.textContent = text; p.class
 const stickDir = () => { const x = input().x; return x > .45 ? 1 : x < -.45 ? -1 : 0; };
 function act(button) {
   const r = press(me.f, button, stickDir(), me.pos.distanceTo(foe.pos));
-  if (r?.move) { me.fwd = 0; pop(MOVES[r.move].name); }
+  if (r?.move) begin(r.move);
   else if (r?.fail === 'penat') pop('Penat!', 'warn');
   else if (r?.fail === 'jauh') pop('Dekat lagi!', 'warn');
+}
+// Range assist: an attack started a little out of range steps in by the
+// gap before its first hit lands, so near misses connect.
+const IDEAL = .85, ASSIST = .9;
+function begin(key) {
+  me.fwd = 0; pop(MOVES[key].name); me.assist = 0;
+  const h = MOVES[key].hits.find(h => !h.auto); if (!h) return;
+  const ideal = IDEAL + sample(MOVES[key].keys, h.t[0]).fwd[0], gap = me.pos.distanceTo(foe.pos) - ideal;
+  if (gap > 0 && gap < ASSIST) { me.assist = gap / h.t[0]; me.assistUntil = h.t[0]; }
 }
 // Stick or keys as one analogue input; keys walk, Shift runs.
 function input() {
@@ -80,7 +91,7 @@ function floatText(text, at, cls) {
 }
 
 // ---- hits
-const done = new Set(), TARGETS = [['head', .17, 'head'], ['chest', .22, 'body'], ['hips', .2, 'body'], ['kneeL', .15, 'low'], ['kneeR', .15, 'low']];
+const SLACK = .07, done = new Set(), TARGETS = [['head', .17, 'head'], ['chest', .22, 'body'], ['hips', .2, 'body'], ['kneeL', .15, 'low'], ['kneeR', .15, 'low']];
 let stop = 0, shake = 0;
 const pt = new T.Vector3(), tp = new T.Vector3();
 function checkHits(d) {
@@ -88,7 +99,7 @@ function checkHits(d) {
     const id = me.f.seq + ':' + h.i; if (done.has(id) || foe.down >= 0) continue;
     let zone = null;
     if (h.auto) zone = foe.hold > .5 ? h.zone : null;
-    else { me.m.point(h.part, pt); for (const [name, r, z] of TARGETS) if (pt.distanceTo(foe.m.point(name, tp)) < r + .05) { zone = z; break; } }
+    else { me.m.point(h.part, pt); for (const [name, r, z] of TARGETS) if (pt.distanceTo(foe.m.point(name, tp)) < r + SLACK) { zone = z; break; } }
     if (!zone) continue;
     done.add(id); foe.hp = Math.max(0, foe.hp - h.dmg); foe.react = PARTNER[zone]; foe.rw = 1; foe.flash = 1;
     foe.knock.addScaledVector(d, h.knock * 4); stop = h.heavy ? .12 : .05; shake = h.heavy ? .12 : .04; thump(h.heavy || h.dmg >= 9);
@@ -135,10 +146,10 @@ function step(dt) {
   }
   me.vel.lerp(want, 1 - Math.exp(-dt * 10)); me.pos.addScaledVector(me.vel, dt);
   me.yaw = Math.atan2(d.x, d.z);
-  const started = tick(me.f, dt); if (started) { me.fwd = 0; pop(MOVES[started].name); }
+  const started = tick(me.f, dt); if (started) begin(started);
   // Pose
   let p;
-  if (me.f.move) { p = sample(MOVES[me.f.move].keys, me.f.t); const f = p.fwd[0]; me.pos.addScaledVector(d, Math.max(0, f - me.fwd)); me.fwd = f; }
+  if (me.f.move) { p = sample(MOVES[me.f.move].keys, me.f.t); const f = p.fwd[0]; me.pos.addScaledVector(d, Math.max(0, f - me.fwd)); me.fwd = f; if (me.assist && me.f.t <= me.assistUntil + dt) me.pos.addScaledVector(d, me.assist * dt); }
   else p = walk(mix(me.f.guard ? GUARD : STANCE, STANCE, 0), me.vel, dt);
   checkHits(d);
   // Partner
@@ -170,8 +181,8 @@ function step(dt) {
   foe.m.root.position.copy(foe.pos); foe.m.root.rotation.y = foe.yaw; foe.m.pose(q); foe.m.flash(foe.flash * .5);
   // Camera: side on, Jai left, pulled back as they separate.
   const mid = v3.addVectors(me.pos, foe.pos).multiplyScalar(.5);
-  want.copy(mid).addScaledVector(n, 2.5 + sep * .9).setY(1.45);
-  camPos.lerp(want, 1 - Math.exp(-dt * 4)); look.lerp(mid.setY(1.02), 1 - Math.exp(-dt * 8));
+  want.copy(mid).addScaledVector(n, 2.3 + sep * .6).addScaledVector(d, -.5).setY(1.4);
+  camPos.lerp(want, 1 - Math.exp(-dt * 4)); look.lerp(mid.setY(.92), 1 - Math.exp(-dt * 8));
   camera.position.copy(camPos); if (shake > 0) { camera.position.x += (Math.random() - .5) * shake; camera.position.y += (Math.random() - .5) * shake; shake = Math.max(0, shake - dt); }
   camera.lookAt(look);
   // HUD
@@ -189,4 +200,4 @@ renderer.setAnimationLoop(() => {
 });
 step(0); $('loading').hidden = true;
 // For automated checks: run frames and press buttons without a real clock.
-window.brawler = { act, step, me, foe, debug, input, reach: (part, foeName) => me.m.point(part, pt).distanceTo(foe.m.point(foeName, tp)), TARGETS, set stick(v) { stick.x = v[0]; stick.y = v[1]; } };
+window.brawler = { act, step, me, foe, debug, input, dur: () => me.f.move ? MOVES[me.f.move].dur : 0, reach: (part, foeName) => me.m.point(part, pt).distanceTo(foe.m.point(foeName, tp)), TARGETS, set stick(v) { stick.x = v[0]; stick.y = v[1]; } };

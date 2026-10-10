@@ -69,3 +69,9 @@ test('guard and partner poses carry every channel', async () => {
   const { GUARD, PARTNER } = await import('../src/brawler.js');
   for (const [k, p] of Object.entries({ GUARD, ...PARTNER })) assert.deepEqual(Object.keys(p).sort(), Object.keys(STANCE).sort(), k);
 });
+
+test('a tireless fighter attacks forever', () => {
+  const f = newFighter({ tireless: true });
+  for (let i = 0; i < 30; i++) { assert.ok(press(f, 'tendang').move); tick(f, 1); }
+  assert.equal(f.stamina, STAMINA.max);
+});

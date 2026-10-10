@@ -12,7 +12,7 @@ export function createMannequin(scene, { body = 0xd9a36c, joint = 0x6b4630, band
   const root = new T.Group(); root.rotation.order = 'YXZ';
   const skin = toon(body), dark = toon(joint), j = {}, meshes = [];
   const node = (name, parent, x, y, z) => { const g = new T.Group(); g.rotation.order = 'YXZ'; g.position.set(x, y, z); parent.add(g); return j[name] = g; };
-  const add = (parent, geo, mat, x = 0, y = 0, z = 0) => { const m = new T.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); outline(m, 1.4); meshes.push(m); return m; };
+  const add = (parent, geo, mat, x = 0, y = 0, z = 0) => { const m = new T.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); outline(m, 2); meshes.push(m); return m; };
   const bone = (parent, len, r, mat = skin) => add(parent, new T.CapsuleGeometry(r, Math.max(.01, len - 2 * r), 3, 8), mat, 0, -len / 2, 0);
   const ball = (parent, r) => add(parent, new T.SphereGeometry(r, 10, 8), dark);
 

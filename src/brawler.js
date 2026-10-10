@@ -47,13 +47,14 @@ export const MOVES = {
   lowKick: { name: 'Low kick', cost: 10, dur: .6, keys: [[0, S],
     [.14, at(.06, { hips: [.9, 0, 30, 0], chest: [0, 20, 0], head: [5, -50, 0], fR: [-.35, .35, .15], kR: [-1, .6, .5], rR: [30, 40], rL: [0, 40] })],
     [.26, at(.12, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })],
-    [.34, at(.12, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })], [.6, at(.12)]],
+    [.34, at(.12, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })],
+    [.46, at(.12, { hips: [.9, 0, 25, 0], chest: [0, 15, 0], head: [5, -40, 0], fR: [-.28, .3, .18], kR: [-1, .6, .6], rR: [30, 30], rL: [0, 25] })], [.6, at(.12)]],
     hits: [{ t: [.2, .34], part: 'footR', dmg: 7, zone: 'low', knock: .2 }] },
   roundhouse: { name: 'Tendang hayun', cost: 16, dur: .82, keys: [[0, S],
     [.16, at(.05, { hips: [.9, 0, 40, 0], chest: [0, 10, 0], head: [5, -50, 0], fR: [-.3, .7, .2], kR: [-1, 1, .5], rR: [30, 40], rL: [0, 60], hR: [-.3, 1.2, -.1], ...GUARD_L })],
     [.3, at(.1, { hips: [.9, 0, 85, 0], spine: [-10, 0, -20], chest: [0, 0, 0], head: [10, -85, 10], fR: [.15, 1.45, .8], kR: [-.6, 1, .3], rR: [45, 90], rL: [0, 70], hR: [-.35, 1, -.35], eR: [-1, -1, 0], ...GUARD_L })],
     [.38, at(.1, { hips: [.9, 0, 95, 0], spine: [-10, 0, -20], chest: [0, 0, 0], head: [10, -90, 10], fR: [.35, 1.35, .6], kR: [-.6, 1, .3], rR: [45, 100], rL: [0, 75], hR: [-.35, 1, -.35], eR: [-1, -1, 0], ...GUARD_L })],
-    [.55, at(.1, { hips: [.9, 0, 40, 0], chest: [0, 10, 0], head: [5, -50, 0], fR: [-.25, .55, 0], kR: [-1, 1, .5], rR: [30, 40], rL: [0, 50], ...GUARD_L })], [.82, at(.1)]],
+    [.52, at(.1, { hips: [.9, 0, 50, 0], chest: [0, 10, 0], head: [5, -60, 0], fR: [-.22, .62, .3], kR: [-.6, 1, .8], rR: [30, 40], rL: [0, 55], ...GUARD_L })], [.82, at(.1)]],
     hits: [{ t: [.25, .4], part: 'footR', dmg: 13, zone: 'head', knock: .9, heavy: true }] },
   knee: { name: 'Lutut', cost: 10, dur: .56, keys: [[0, S],
     [.12, P({ hL: [.12, 1.5, .7], hR: [-.1, 1.5, .7], eL: [.5, -1, 0], eR: [-.5, -1, 0] })],
@@ -100,8 +101,9 @@ export function pick(button, dir = 0, near = Infinity) {
 }
 export const STAMINA = { max: 100, regen: 24, rest: .45 };
 
-export const newFighter = () => ({ move: null, t: 0, seq: 0, stamina: STAMINA.max, rest: 0, queued: null, guard: false });
-function start(f, key) { const m = MOVES[key]; f.move = key; f.t = 0; f.seq++; f.queued = null; f.stamina -= m.cost; f.rest = STAMINA.rest; return { move: key }; }
+// A tireless fighter (for free training) never pays stamina.
+export const newFighter = ({ tireless = false } = {}) => ({ move: null, t: 0, seq: 0, stamina: STAMINA.max, rest: 0, queued: null, guard: false, tireless });
+function start(f, key) { const m = MOVES[key]; f.move = key; f.t = 0; f.seq++; f.queued = null; if (!f.tireless) f.stamina -= m.cost; f.rest = STAMINA.rest; return { move: key }; }
 // Press a button. `near` is the distance to the opponent (for the headlock).
 // dir: the stick toward the opponent (1), away (-1) or neither (0).
 export function press(f, button, dir = 0, near = Infinity) {
@@ -112,7 +114,7 @@ export function press(f, button, dir = 0, near = Infinity) {
     return null;
   }
   if (key === 'headlock' && near > MOVES.headlock.reach) return { fail: 'jauh' };
-  if (f.stamina < MOVES[key].cost) return { fail: 'penat' };
+  if (!f.tireless && f.stamina < MOVES[key].cost) return { fail: 'penat' };
   return start(f, key);
 }
 // Advance time. Returns the move that just started from the chain, if any.
@@ -120,7 +122,7 @@ export function tick(f, dt) {
   let started = null;
   if (f.move) {
     const m = MOVES[f.move]; f.t += dt;
-    if (f.queued && f.t >= m.chainAt) { const q = f.queued; f.queued = null; if (f.stamina >= MOVES[q].cost) { start(f, q); started = q; } }
+    if (f.queued && f.t >= m.chainAt) { const q = f.queued; f.queued = null; if (f.tireless || f.stamina >= MOVES[q].cost) { start(f, q); started = q; } }
     else if (f.t >= m.dur) { if (m.gain) f.stamina = Math.min(STAMINA.max, f.stamina + m.gain); f.move = null; f.t = 0; f.queued = null; }
   } else if ((f.rest -= dt) < 0) { f.stamina = Math.min(STAMINA.max, f.stamina + STAMINA.regen * Math.min(dt, -f.rest) * (f.guard ? .5 : 1)); f.rest = 0; }
   return started;
