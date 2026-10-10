@@ -26,6 +26,8 @@ Masa latihan stamina tak terhad, jadi boleh serang tanpa henti. Butang "Penat" d
 
 Bantuan jarak: kalau serangan dimula bila lawan sedikit jauh (sampai lebih kurang 0.6 m dari jarak ideal), Jai melangkah masuk sendiri sebelum pukulan sampai. Lebih jauh dari tu, pukulan tersasar.
 
+**Kekuda.** Ikut bentuk kekuda dalam game lawan macam Tekken: badan menyerong, kaki lebar (lutut depan bengkok di atas kaki, kaki belakang panjang ke belakang), dada terbuka dan tegak. Tangan depan naik di paras dagu dengan lengan bawah hampir tegak dan siku ke bawah; lengan bawah tangan belakang melintang di depan dada.
+
 **Nafas.** Masa berdiri, dada Jai naik turun (lebih kurang sekali setiap 3 saat) dan badannya bergoyang sedikit macam peninju: berat badan beralih, kepala dan tangan bergerak, lutut lentur. Bila menyerang, dia tarik nafas dan tahan. Lepas serangan habis, nafas dihembus cepat, kemudian kembali ke rentak biasa. Makin banyak bergerak dan menyerang, makin laju dan dalam nafasnya, dan bila rehat ia reda semula. Kawan latih pun bernafas, dan lebih kuat selepas kena pukul. Logik nafas dalam `src/breath.js` (diuji dalam `tests/breath.test.js`).
 
 Pukulan yang kena beri hitstop, gegar kamera, bunyi dan nombor damage. Pukulan berturut-turut dalam 1.1 saat dikira combo. Bila HP kawan latih habis, dia jatuh (K.O.) dan bangun semula. Kamera dari sisi, sedikit di belakang Jai, supaya kedua-dua kaki nampak.

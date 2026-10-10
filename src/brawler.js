@@ -4,13 +4,17 @@ import { over } from './keyframes.js';
 // a knee, a shoulder barge and one bit of MMA, the headlock. Pure rules and
 // pose data; brawler-view.js draws it.
 
-// Orthodox stance, left side forward. Hand and foot targets are wrists and
-// ankles in the fighter's space; e*/k* are elbow and knee directions;
-// r* = [toe-down pitch, yaw] of each foot.
+// Orthodox stance, left side forward, in the shape fighting games use: body
+// bladed well side-on, a wide base (lead knee bent over the foot, rear leg
+// long behind), chest open and upright. The lead hand is up in front at chin
+// height with the forearm near vertical and the elbow down; the rear forearm
+// lies across the chest. Hand and foot targets are wrists and ankles in the
+// fighter's space; e*/k* are elbow and knee directions; r* = [toe-down pitch,
+// yaw] of each foot.
 export const STANCE = {
-  hips: [.92, 0, -25, 0], spine: [8, 0, 0], chest: [0, 10, 0], neck: [0, 0, 0], head: [5, 15, 0],
-  hL: [.13, 1.42, .36], eL: [.6, -1, -.2], hR: [-.08, 1.47, .2], eR: [-.6, -1, -.3],
-  fL: [.12, .075, .28], kL: [.1, 0, 1], fR: [-.15, .075, -.24], kR: [-.2, 0, 1], rL: [0, -15], rR: [12, -45],
+  hips: [.88, 0, -40, 0], spine: [5, 0, 0], chest: [0, 8, 0], neck: [0, 0, 0], head: [3, 32, 0],
+  hL: [.06, 1.5, .44], eL: [.35, -1, .1], hR: [.06, 1.32, .25], eR: [-1, -.35, 0],
+  fL: [.16, .075, .36], kL: [.15, 0, 1], fR: [-.22, .075, -.3], kR: [-.3, 0, 1], rL: [0, -25], rR: [10, -55],
   fwd: [0]
 };
 const P = part => over(STANCE, part), S = P({});
@@ -45,10 +49,10 @@ export const MOVES = {
     [.5, P({ hips: [.9, 0, -20, 0], fL: [.1, .45, .35], kL: [0, 1, 1] })], [.66, S]],
     hits: [{ t: [.22, .36], part: 'footL', dmg: 8, zone: 'body', knock: 1 }] },
   lowKick: { name: 'Low kick', cost: 10, dur: .6, keys: [[0, S],
-    [.14, at(.06, { hips: [.9, 0, 30, 0], chest: [0, 20, 0], head: [5, -50, 0], fR: [-.35, .35, .15], kR: [-1, .6, .5], rR: [30, 40], rL: [0, 40] })],
-    [.26, at(.12, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })],
-    [.34, at(.12, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })],
-    [.46, at(.12, { hips: [.9, 0, 25, 0], chest: [0, 15, 0], head: [5, -40, 0], fR: [-.28, .3, .18], kR: [-1, .6, .6], rR: [30, 30], rL: [0, 25] })], [.6, at(.12)]],
+    [.14, at(.09, { hips: [.9, 0, 30, 0], chest: [0, 20, 0], head: [5, -50, 0], fR: [-.35, .35, .15], kR: [-1, .6, .5], rR: [30, 40], rL: [0, 40] })],
+    [.26, at(.18, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })],
+    [.34, at(.18, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })],
+    [.46, at(.18, { hips: [.9, 0, 25, 0], chest: [0, 15, 0], head: [5, -40, 0], fR: [-.28, .3, .18], kR: [-1, .6, .6], rR: [30, 30], rL: [0, 25] })], [.6, at(.18)]],
     hits: [{ t: [.2, .34], part: 'footR', dmg: 7, zone: 'low', knock: .2 }] },
   roundhouse: { name: 'Tendang hayun', cost: 16, dur: .82, keys: [[0, S],
     [.16, at(.05, { hips: [.9, 0, 40, 0], chest: [0, 10, 0], head: [5, -50, 0], fR: [-.3, .7, .2], kR: [-1, 1, .5], rR: [30, 40], rL: [0, 60], hR: [-.3, 1.2, -.1], ...GUARD_L })],

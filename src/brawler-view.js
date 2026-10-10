@@ -225,7 +225,8 @@ function step(dt) {
   camera.position.copy(camPos); if (shake > 0) { camera.position.x += (Math.random() - .5) * shake; camera.position.y += (Math.random() - .5) * shake; shake = Math.max(0, shake - dt); }
   camera.lookAt(look);
   // Close-up views for checks (window.brawler.debug.cam = 'side' | 'front').
-  if (debug.zoom) { const h = amir.a.fists.L.localToWorld(new T.Vector3(0, .05, 0)); camera.position.copy(h).add(new T.Vector3(debug.zoom[0], .05, debug.zoom[1]).applyAxisAngle(T.Object3D.DEFAULT_UP, me.yaw).multiplyScalar(.45)); camera.lookAt(h); }
+  if (debug.view) { const [a, b, h] = debug.view, c = me.pos.clone().setY(1.05); camera.position.copy(c).addScaledVector(d, a).addScaledVector(n, b).setY(h); camera.lookAt(c); }
+  else if (debug.zoom) { const h = amir.a.fists.L.localToWorld(new T.Vector3(0, .05, 0)); camera.position.copy(h).add(new T.Vector3(debug.zoom[0], .05, debug.zoom[1]).applyAxisAngle(T.Object3D.DEFAULT_UP, me.yaw).multiplyScalar(.45)); camera.lookAt(h); }
   else if (debug.cam) { const c = me.pos.clone().setY(1.35); camera.position.copy(c).addScaledVector(debug.cam === 'side' ? n : d, 1.3).addScaledVector(debug.cam === 'side' ? d : n, debug.cam === 'side' ? .2 : 1.2); camera.lookAt(c.addScaledVector(d, .2)); }
   // HUD
   $('stam').style.width = `${me.f.stamina}%`; $('stam').classList.toggle('low', me.f.stamina < 20); $('hp').style.width = `${foe.hp}%`;
