@@ -2,16 +2,39 @@
 
 Game lawan 1 lawan 1 untuk telefon. Watak remaja bertarung di satu gelanggang guna silat, boxing, MMA dan capoeira. Lawan komputer dulu.
 
-## Status: watak saja (v0.1.0)
+## Status: v0.2.0, gelanggang latihan
 
-Buat masa ni repo ni cuma ada **mekanik watak** yang disalin dari [Malaysian-retro-game](https://github.com/mohdaie/Malaysian-retro-game). Belum ada lawan.
+`index.html` ialah gelanggang latihan. **Jai**, budak gaduh jalanan tanpa disiplin tertentu, lawan kawan latih yang cuma terima pukulan. Kedua-duanya mannequin bersendi buat masa ni.
 
-`index.html` ialah paparan watak: Amir dan Nur berdiri berhadapan di atas tikar gelanggang sementara. Butang di bawah tukar gerak (Diri, Jalan, Lari, Cangkung, Lompat, Lambai). Seret untuk pusing kamera, cubit atau scroll untuk zum.
+| Butang | Keyboard | Gerak |
+|---|---|---|
+| Tumbuk | J | Jab. Tekan lagi untuk combo: jab, straight, uppercut |
+| Hayun | K | Haymaker: hayun besar, lambat tapi sakit |
+| Tendang | L | Push kick: tolak lawan ke belakang |
+| Sepak bawah | U | Low kick ke peha |
+| Lutut | I | Pegang kolar, lutut ke perut |
+| Rempuh | O | Rempuh guna bahu |
+| Kepit | H | Headlock: kepit kepala, tiga uppercut, tolak. Kena dekat dulu |
+| Ejek | T | Ejek lawan, isi semula stamina |
+| Tahan | Space (tahan) | Tutup muka |
+
+Sentuh separuh kiri skrin untuk joystick: kanan mara, kiri undur, atas dan bawah langkah keliling lawan. Keyboard guna WASD atau anak panah.
+
+Setiap serangan guna stamina. Kalau habis, keluar "Penat!" dan kena tunggu sekejap. Pukulan yang kena beri hitstop, gegar kamera, bunyi dan nombor damage. Pukulan berturut-turut dalam 1.1 saat dikira combo. Bila HP kawan latih habis, dia jatuh (K.O.) dan bangun semula.
+
+`watak.html` masih tunjuk Amir dan Nur (model mocap dari Malaysian-retro-game) untuk rujukan.
 
 ```sh
 npm test      # node --test tests/*.test.js
 npm run dev   # http://localhost:4173
 ```
+
+## Mannequin dan gerak serangan
+
+- `src/mannequin.js`: badan 1.75 m dari segmen tegar atas rantai sendi sebenar: pinggul, tulang belakang, dada, leher, kepala; bahu, siku, pergelangan; pangkal peha, lutut, buku lali. Badan atas dipusing ikut sudut. Tangan dan kaki guna IK dua tulang: pose beri sasaran pergelangan dan buku lali, dengan arah siku dan lutut.
+- `src/keyframes.js`: pose ialah objek nombor; satu gerak ialah senarai `[masa, pose]` yang diselang dengan ease.
+- `src/brawler.js`: pose kekuda, semua gerak Jai (keyframe, kos stamina, tetingkap pukulan, damage, zon, knockback), combo, stamina dan headlock. Logik tulen, diuji dalam `tests/brawler.test.js`.
+- `src/brawler-view.js`: gelanggang, kamera sisi, joystick dan butang, kesan pukulan, reaksi dan K.O. kawan latih.
 
 ## Cara watak dibina
 
@@ -33,7 +56,7 @@ Untuk tambah watak baru: eksport watak A-pose menghadap depan sebagai GLB, tulis
 - `src/locomotion.js`: kitaran langkah dan penyelesai kaki (diuji dalam `tests/locomotion.test.js`)
 - `src/actions.js`: pose tindakan untuk badan sandaran
 - `src/illustration.js`: bahan toon dan garis dakwat
-- `src/viewer.js`: paparan watak dalam `index.html`
+- `src/viewer.js`: paparan watak dalam `watak.html`
 - `scripts/bake-model.mjs`: sediakan model image-to-3D untuk rangka
 - `scripts/dev.mjs`: pelayan tempatan
 - `vendor/`: Three.js 0.186.1 (lesen MIT dalam `vendor/THREE-LICENSE.txt`)
@@ -45,6 +68,8 @@ Untuk tambah watak baru: eksport watak A-pose menghadap depan sebagai GLB, tulis
 
 ## Seterusnya
 
+- Lawan komputer yang menyerang balik, dan tahan yang betul-betul kurangkan damage
+- Mod "naik angin" untuk Jai
 - Watak remaja: Aiman (silat), Danial (boxing), Hana (capoeira), Raj (MMA)
 - Klip lawan: kekuda, jab, hook, tendang, elak, tahan, kena pukul, jatuh, bangun
 - Hitbox pada tulang, HP dan stamina, tiga pusingan, AI komputer

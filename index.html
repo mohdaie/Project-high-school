@@ -2,22 +2,67 @@
 <html lang="ms">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Project High School · Watak</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Project High School</title>
   <style>
-    html, body { margin: 0; height: 100%; background: #1d1b26; color: #f4efe6; font: 14px system-ui, sans-serif; overflow: hidden; touch-action: none; }
+    :root { --ink: #1f1c2b; --paper: #f4ecdc; --red: #d8322a; --gold: #e8a83a; --stam: #6cc4a1; --line: #f4ecdc40; }
+    html, body { margin: 0; height: 100%; background: var(--ink); color: var(--paper); font: 600 14px/1.2 system-ui, sans-serif; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    [hidden] { display: none !important; }
     canvas { display: block; width: 100%; height: 100%; }
-    #bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, #1d1b26cc 40%); }
-    button { font: inherit; padding: 10px 14px; border-radius: 8px; border: 1px solid #f4efe655; background: #2d2a3a; color: inherit; }
-    button[aria-pressed="true"] { background: #e2a03f; color: #1d1b26; border-color: #e2a03f; }
-    #msg { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 16px; right: 16px; text-align: center; opacity: .8; }
+    #hud { position: fixed; inset: 0; pointer-events: none; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+    .bars { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); left: 16px; right: 16px; display: flex; justify-content: space-between; gap: 24px; }
+    .bar { flex: 1; max-width: 300px; }
+    .bar b { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+    .bar small { font-weight: 500; opacity: .7; letter-spacing: 0; text-transform: none; }
+    .track { height: 10px; border: 2px solid var(--paper); border-radius: 3px; overflow: hidden; background: #0006; }
+    .track i { display: block; height: 100%; width: 100%; transition: width .12s; }
+    #stam { background: var(--stam); } #stam.low { background: var(--gold); } #hp { background: var(--red); margin-left: auto; }
+    .bar.right { text-align: right; }
+    #pop { position: absolute; top: 22%; left: 0; right: 0; text-align: center; font-size: 26px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 3px 0 var(--ink); }
+    #pop.warn { color: var(--gold); } #pop.ko { color: var(--red); font-size: 56px; }
+    #combo { position: absolute; top: 31%; left: 0; right: 0; text-align: center; color: var(--gold); font-size: 18px; font-weight: 900; text-shadow: 0 2px 0 var(--ink); }
+    .dmg { position: absolute; transform: translate(-50%, -50%); font-size: 20px; font-weight: 900; color: var(--paper); text-shadow: 0 2px 0 var(--ink); animation: rise .8s ease-out forwards; }
+    .dmg.big { font-size: 30px; color: var(--gold); }
+    @keyframes rise { to { transform: translate(-50%, -150%); opacity: 0; } }
+    #pad { position: fixed; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: repeat(3, 60px); gap: 8px; }
+    #pad button { width: 60px; height: 52px; border-radius: 12px; border: 2px solid var(--line); background: #2c2740d9; color: var(--paper); font: 800 11px/1.1 system-ui, sans-serif; letter-spacing: .02em; touch-action: none; padding: 0; }
+    #pad button.on { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+    #pad button.hot { border-color: var(--red); }
+    #pad button kbd { display: block; font: 600 9px system-ui; opacity: .55; margin-top: 3px; }
+    #stick { position: fixed; left: 0; top: 0; width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--line); background: #0003; pointer-events: none; }
+    #knob { position: absolute; left: 30px; top: 30px; width: 40px; height: 40px; border-radius: 50%; background: #f4ecdc99; }
+    #help { position: fixed; left: calc(16px + env(safe-area-inset-left, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); max-width: 40%; font-weight: 500; font-size: 12px; opacity: .6; }
+    #loading { position: fixed; inset: 0; display: grid; place-items: center; background: var(--ink); }
+    @media (hover: none) { #pad button kbd { display: none; } }
+    @media (max-height: 360px) { #pad button { height: 44px; } }
+    @media (prefers-reduced-motion: reduce) { .dmg { animation-duration: .01s; } }
   </style>
   <script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
 </head>
 <body>
-  <canvas id="view" aria-label="Amir dan Nur di gelanggang. Seret untuk pusing kamera."></canvas>
-  <div id="msg">Memuatkan watak…</div>
-  <div id="bar"></div>
-  <script type="module" src="./src/viewer.js"></script>
+  <canvas id="view" aria-label="Gelanggang latihan: Jai lawan kawan latih"></canvas>
+  <div id="hud">
+    <div class="bars">
+      <div class="bar"><b>Jai <small>· gaduh jalanan</small></b><div class="track"><i id="stam"></i></div></div>
+      <div class="bar right"><b>Kawan latih</b><div class="track"><i id="hp"></i></div></div>
+    </div>
+    <div id="pop"></div>
+    <div id="combo" hidden></div>
+  </div>
+  <div id="stick" hidden><div id="knob"></div></div>
+  <p id="help">Sentuh kiri skrin untuk bergerak. Kanan = mara, kiri = undur, atas/bawah = langkah keliling.<br>Keyboard: WASD gerak, J K L U I O H T serang, Space tahan.</p>
+  <div id="pad">
+    <button data-act="tumbuk">Tumbuk<kbd>J</kbd></button>
+    <button data-act="hayun" class="hot">Hayun<kbd>K</kbd></button>
+    <button data-act="kepit" class="hot">Kepit<kbd>H</kbd></button>
+    <button data-act="tendang">Tendang<kbd>L</kbd></button>
+    <button data-act="sepak">Sepak bawah<kbd>U</kbd></button>
+    <button data-act="lutut">Lutut<kbd>I</kbd></button>
+    <button data-act="rempuh">Rempuh<kbd>O</kbd></button>
+    <button data-act="ejek">Ejek<kbd>T</kbd></button>
+    <button data-act="tahan">Tahan<kbd>Space</kbd></button>
+  </div>
+  <div id="loading">Memuatkan gelanggang…</div>
+  <script type="module" src="./src/brawler-view.js"></script>
 </body>
 </html>
