@@ -5,6 +5,7 @@ import { sample, mix } from './keyframes.js';
 import { newBreath, breathe } from './breath.js';
 import { loadRig, loadModel, createActor, MODELS } from './actor.js';
 import { retarget } from './retarget.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { STANCE, GUARD, PARTNER, MOVES, newFighter, press, tick, activeHits, grabbing } from './brawler.js';
 
 // Training ring: Jai against a sparring partner who takes the hits.
@@ -33,7 +34,10 @@ const foe = { m: createMannequin(scene, { body: 0x8fa3b8, joint: 0x3e4a5c }), po
 const AMIR_SCALE = 1.17;
 let amir = null, showAmir = false, wantAmir = true;
 function useAmir(on) { wantAmir = on; showAmir = on && !!amir; me.m.root.visible = !showAmir; if (amir) amir.a.group.visible = showAmir; $('modelBtn').textContent = showAmir ? 'Watak: Amir' : 'Watak: mannequin'; }
-Promise.all([loadRig(), loadModel(MODELS.amir)]).then(([rig, model]) => {
+// Hosts that cannot serve .glb get each model as base64 text beside it
+// (window.GLB_TXT set by the page).
+const glbText = window.GLB_TXT ? url => fetch(url + '.txt').then(r => r.text()).then(b => { const bin = atob(b.trim()), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new GLTFLoader().parseAsync(a.buffer, ''); }) : undefined;
+Promise.all([loadRig(undefined, glbText), loadModel(MODELS.amir, glbText)]).then(([rig, model]) => {
   const a = createActor(scene, 0, 0, 'amir', rig, model); amir = { a, update: retarget(a, me.m, AMIR_SCALE) }; useAmir(wantAmir);
 }).catch(e => { console.warn('Amir unavailable', e); $('modelBtn').hidden = true; });
 

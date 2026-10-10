@@ -16,12 +16,14 @@ import { createFace } from './face.js';
 // characters.js at a realistic one-in-six-and-a-half head height.
 export const RIG_URL = new URL('../assets/models/kids-mocap.glb', import.meta.url).href;
 let loading = null;
-export function loadRig(url = RIG_URL) { return loading ??= new GLTFLoader().loadAsync(url).then(prepareRig); }
+// `load` turns a URL into a parsed glTF (the default fetches the .glb).
+const gltf = url => new GLTFLoader().loadAsync(url);
+export function loadRig(url = RIG_URL, load = gltf) { return loading ??= load(url).then(prepareRig); }
 // Characters modelled outside the code (an image-to-3D export prepared by
 // scripts/bake-model.mjs): a textured mesh, its weights and fitted joints.
 export const MODELS = { amir: new URL('../assets/models/amir.glb', import.meta.url).href, nur: new URL('../assets/models/nur.glb', import.meta.url).href };
 const models = new Map();
-export function loadModel(url) { if (!models.has(url)) models.set(url, new GLTFLoader().loadAsync(url)); return models.get(url); }
+export function loadModel(url, load = gltf) { if (!models.has(url)) models.set(url, load(url)); return models.get(url); }
 
 const CLIPS = {
   idle: 'Idle_Loop', walk: 'Walk_Loop', jog: 'Jog_Fwd_Loop', sprint: 'Sprint_Loop', talk: 'Idle_Talking_Loop', interact: 'Interact', pickup: 'PickUp_Table', sit: 'Sitting_Idle_Loop',
