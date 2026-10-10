@@ -30,7 +30,9 @@ Bantuan jarak: kalau serangan dimula bila lawan sedikit jauh (sampai lebih kuran
 
 Pukulan yang kena beri hitstop, gegar kamera, bunyi dan nombor damage. Pukulan berturut-turut dalam 1.1 saat dikira combo. Bila HP kawan latih habis, dia jatuh (K.O.) dan bangun semula. Kamera dari sisi, sedikit di belakang Jai, supaya kedua-dua kaki nampak.
 
-**Model sebenar (ujian dengan Amir).** Jai sekarang memakai model Amir dari Malaysian-retro-game: satu badan bertekstur yang kulitnya melentur di sendi. Mannequin masih membuat semua pose (gerak, IK, nafas) tanpa kelihatan, dan `src/retarget.js` gerakkan tulang Amir ikut mannequin. Setiap tulang ambil putaran sendi mannequin dari posisi rehat, dengan pembetulan supaya lengan A-pose Amir tetap ikut lengan mannequin. Pinggul naik turun ikut panjang kaki Amir, dan kaki yang lebih rendah kekal di lantai. Amir dibesarkan 1.17 kali (dari 1.5 m ke lebih kurang 1.75 m) supaya jangkauan sama dengan mannequin. Butang "Watak" dalam Senarai gerak tukar antara Amir dan mannequin. Kalau model gagal dimuat, mannequin digunakan.
+**Model sebenar (ujian dengan Amir).** Jai sekarang memakai model Amir dari Malaysian-retro-game: satu badan bertekstur yang kulitnya melentur di sendi. Mannequin masih membuat semua pose (gerak, IK, nafas) tanpa kelihatan, dan `src/retarget.js` gerakkan tulang Amir ikut mannequin. Setiap tulang ambil putaran sendi mannequin dari posisi rehat, dengan pembetulan supaya lengan A-pose Amir tetap ikut lengan mannequin. Pinggul naik turun ikut panjang kaki Amir, dan kaki yang lebih rendah kekal di lantai. Amir dibesarkan 1.17 kali (dari 1.5 m ke lebih kurang 1.75 m) supaya jangkauan sama dengan mannequin. **Tangan dan siku.** Model image-to-3D macam Amir ada tangan bulat tanpa jari, dan kulitnya melentur terlalu panjang di siku sampai lengan nampak macam getah. `src/hands.js` tajamkan lipatan di siku, pergelangan dan lutut (pertukaran antara dua tulang jadi beberapa sentimeter saja di satah lipatan), lipat tangan asal ke dalam pergelangan, dan pakaikan penumbuk yang dimodel: jari melengkung, empat buku lima, ibu jari melintang, dan balutan tangan. Warna kulit penumbuk diambil dari tekstur tangan model.
+
+Butang "Watak" dalam Senarai gerak tukar antara Amir dan mannequin. Kalau model gagal dimuat, mannequin digunakan.
 
 `watak.html` masih tunjuk Amir dan Nur (model mocap dari Malaysian-retro-game) untuk rujukan.
 
@@ -45,6 +47,7 @@ npm run dev   # http://localhost:4173
 - `src/keyframes.js`: pose ialah objek nombor; satu gerak ialah senarai `[masa, pose]` yang diselang dengan ease.
 - `src/brawler.js`: pose kekuda, semua gerak Jai (keyframe, kos stamina, tetingkap pukulan, damage, zon, knockback), combo, stamina dan headlock. Logik tulen, diuji dalam `tests/brawler.test.js`.
 - `src/breath.js`: nafas: rentak, tahan nafas masa menyerang, hembus selepasnya, dan usaha yang naik dan reda
+- `src/hands.js`: lipatan sendi yang tajam dan penumbuk untuk model image-to-3D
 - `src/retarget.js`: gerakkan model berkulit (dari `actor.js`) ikut mannequin yang dipose
 - `src/brawler-view.js`: gelanggang, kamera sisi, joystick dan butang, kesan pukulan, reaksi dan K.O. kawan latih.
 

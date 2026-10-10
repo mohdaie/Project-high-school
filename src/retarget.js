@@ -1,4 +1,5 @@
 import * as T from 'three';
+import { sharpenJoints, addFists } from './hands.js';
 
 // Drive a skinned model (an actor from actor.js) from a posed mannequin.
 // Each model bone takes its mannequin joint's world-space turn away from
@@ -12,7 +13,7 @@ const MAP = [['hips', 'hips'], ['spine001', 'spine'], ['spine002', 'chest'], ['s
   ...['L', 'R'].flatMap(s => [['shoulder' + s, 'chest'], ['upper_arm' + s, 'shoulder' + s], ['forearm' + s, 'elbow' + s], ['hand' + s, 'hand' + s],
     ['thigh' + s, 'hip' + s], ['shin' + s, 'knee' + s], ['foot' + s, 'ankle' + s], ['toe' + s, 'ankle' + s]])];
 
-export function retarget(actor, mannequin, scale = 1) {
+export function retarget(actor, mannequin, scale = 1, { fists = true } = {}) {
   const { bone, group, figure } = actor, j = mannequin.j, m = mannequin.root;
   const w = o => o.getWorldPosition(new T.Vector3()), wq = o => o.getWorldQuaternion(new T.Quaternion());
   // Rest of the mannequin: every joint unturned, at the origin, facing +z.
@@ -24,6 +25,7 @@ export function retarget(actor, mannequin, scale = 1) {
   // Bind pose of the model, at the origin, scaled to size.
   group.position.set(0, 0, 0); group.rotation.set(0, 0, 0); group.scale.setScalar(scale);
   figure.skeleton.pose(); group.updateMatrixWorld(true);
+  if (fists) { sharpenJoints(actor); addFists(actor); }
   const down = new T.Vector3(0, -1, 0), bones = MAP.map(([b, n]) => {
     const o = bone(b), bind = wq(o), child = LIMBS[b.slice(0, -1)];
     const fix = child ? new T.Quaternion().setFromUnitVectors(down, w(bone(child + b.at(-1))).sub(w(o)).normalize()).invert() : new T.Quaternion();
