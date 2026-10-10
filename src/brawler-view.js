@@ -3,6 +3,8 @@ import { inkViewport } from './illustration.js';
 import { createMannequin } from './mannequin.js';
 import { sample, mix } from './keyframes.js';
 import { newBreath, breathe } from './breath.js';
+import { loadRig, loadModel, createActor, MODELS } from './actor.js';
+import { retarget } from './retarget.js';
 import { STANCE, GUARD, PARTNER, MOVES, newFighter, press, tick, activeHits, grabbing } from './brawler.js';
 
 // Training ring: Jai against a sparring partner who takes the hits.
@@ -25,6 +27,16 @@ const outer = new T.Mesh(new T.CircleGeometry(30, 32), new T.MeshLambertMaterial
 const me = { m: createMannequin(scene, { body: 0xd9a36c, joint: 0x5b3a28, band: 0xd8322a }), f: newFighter({ tireless: true }), pos: new T.Vector3(-.6, 0, 0), yaw: 0, vel: new T.Vector3(), phase: 0, fwd: 0, seq: 0, breath: newBreath() };
 const foe = { m: createMannequin(scene, { body: 0x8fa3b8, joint: 0x3e4a5c }), pos: new T.Vector3(.6, 0, 0), yaw: 0, hp: 100, react: PARTNER.idle, rw: 0, knock: new T.Vector3(), hold: 0, down: -1, flash: 0, breath: newBreath() };
 
+// Amir's skinned model (from Malaysian-retro-game) worn over Jai's
+// mannequin, which keeps posing unseen and drives his bones. Scaled from a
+// 1.5 m child toward the mannequin's 1.75 m so the reach matches.
+const AMIR_SCALE = 1.17;
+let amir = null, showAmir = false, wantAmir = true;
+function useAmir(on) { wantAmir = on; showAmir = on && !!amir; me.m.root.visible = !showAmir; if (amir) amir.a.group.visible = showAmir; $('modelBtn').textContent = showAmir ? 'Watak: Amir' : 'Watak: mannequin'; }
+Promise.all([loadRig(), loadModel(MODELS.amir)]).then(([rig, model]) => {
+  const a = createActor(scene, 0, 0, 'amir', rig, model); amir = { a, update: retarget(a, me.m, AMIR_SCALE) }; useAmir(wantAmir);
+}).catch(e => { console.warn('Amir unavailable', e); $('modelBtn').hidden = true; });
+
 // ---- input: keyboard, a floating stick on the left, buttons on the right
 const keys = new Set(), stick = { id: null, x: 0, y: 0, ox: 0, oy: 0 };
 // Keyboard face buttons sit in the same diamond: I triangle, J square, L circle, K cross.
@@ -39,6 +51,7 @@ for (const b of document.querySelectorAll('#pad button')) {
 }
 const base = $('stick'), knob = $('knob');
 $('tiredBtn').onclick = () => { me.f.tireless = !me.f.tireless; me.f.stamina = 100; $('tiredBtn').textContent = me.f.tireless ? 'Penat: tak' : 'Penat: ya'; $('stamWrap').hidden = me.f.tireless; };
+$('modelBtn').onclick = () => useAmir(!wantAmir);
 $('listBtn').onclick = () => { const l = $('list'); l.hidden = !l.hidden; $('listBtn').setAttribute('aria-expanded', !l.hidden); };
 canvas.addEventListener('pointerdown', e => { if (stick.id !== null || e.clientX > innerWidth * .5) return; audio(); stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY; canvas.setPointerCapture(e.pointerId); base.hidden = false; base.style.transform = `translate(${e.clientX - 60}px,${e.clientY - 60}px)`; moveStick(e); });
 canvas.addEventListener('pointermove', e => { if (e.pointerId === stick.id) moveStick(e); });
@@ -199,6 +212,7 @@ function step(dt) {
   }
   // Apply
   me.m.root.position.copy(me.pos); me.m.root.rotation.y = me.yaw; me.m.pose(p);
+  if (showAmir) { amir.update(); amir.a.face?.update(dt, false); }
   foe.m.root.position.copy(foe.pos); foe.m.root.rotation.y = foe.yaw; foe.m.pose(q); foe.m.flash(foe.flash * .5);
   // Camera: side on, Jai left, pulled back as they separate.
   const mid = v3.addVectors(me.pos, foe.pos).multiplyScalar(.5);
@@ -221,4 +235,4 @@ renderer.setAnimationLoop(() => {
 });
 step(0); $('loading').hidden = true;
 // For automated checks: run frames and press buttons without a real clock.
-window.brawler = { act, step, me, foe, debug, input, dur: () => me.f.move ? MOVES[me.f.move].dur : 0, reach: (part, foeName) => me.m.point(part, pt).distanceTo(foe.m.point(foeName, tp)), TARGETS, set stick(v) { stick.x = v[0]; stick.y = v[1]; } };
+window.brawler = { get amir() { return amir; }, useAmir, act, step, me, foe, debug, input, dur: () => me.f.move ? MOVES[me.f.move].dur : 0, reach: (part, foeName) => me.m.point(part, pt).distanceTo(foe.m.point(foeName, tp)), TARGETS, set stick(v) { stick.x = v[0]; stick.y = v[1]; } };
