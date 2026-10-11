@@ -92,6 +92,9 @@ for side in ['L','R']:
   bpy.ops.mesh.primitive_uv_sphere_add(segments=segments,ring_count=rings,radius=1)
   o=bpy.context.object;o.name=name
   for v in o.data.vertices: v.co=world(wrist+basis@(np.array(centre)+np.array(v.co)*radii))
+  # Mirroring the right-hand basis reverses orientation; reverse faces too.
+  if np.linalg.det(basis)<0:
+   for face in o.data.polygons: face.flip()
   parts.append((o,col))
  ellipsoid('Palm '+side,(0,.030,0),(.027,.043,.034))
  for k in range(4):
@@ -156,6 +159,6 @@ extras={**extras,'fighterReady':True,'refinement':{'tool':'Blender','version':1,
 out={'asset':{'version':'2.0','generator':'Blender Amir fighter refinement'},'scene':0,'scenes':[{'nodes':[0,1]}],'nodes':nodes,'skins':[{'inverseBindMatrices':ib_index,'skeleton':1,'joints':list(range(1,len(names)+1))}],'meshes':[{'name':'Amir fighter','primitives':[{'attributes':attrs,'indices':indices,'material':0}]}],'materials':[{'name':'Amir original colours','pbrMetallicRoughness':{'baseColorTexture':{'index':0},'metallicFactor':0,'roughnessFactor':1}}],'textures':[{'source':0,'sampler':0}],'samplers':[{'magFilter':9729,'minFilter':9987,'wrapS':33071,'wrapT':33071}],'images':[{'bufferView':image_view,'mimeType':'image/jpeg'}],'accessors':access,'bufferViews':views,'buffers':[{'byteLength':offset}],'extras':extras}
 j=json.dumps(out,separators=(',',':')).encode();j+=b' '*((-len(j))%4);binout=b''.join(chunks);output.write_bytes(struct.pack('<III',0x46546c67,2,28+len(j)+len(binout))+struct.pack('<II',len(j),0x4e4f534a)+j+struct.pack('<II',len(binout),0x004e4942)+binout)
 # Embedded texture and fitted rig make the .blend usable without any external files.
-bpy.context.view_layer.objects.active=obj;obj.select_set(True);bpy.ops.wm.save_as_mainfile(filepath=str(blend.resolve()))
+bpy.context.view_layer.objects.active=obj;obj.select_set(True);bpy.ops.wm.save_as_mainfile(filepath=str(blend.resolve()),compress=True)
 for temp in [tex,Path(str(output)+'.jpg')]:temp.unlink(missing_ok=True)
 print(json.dumps({'sourceVertices':len(original),'removedHandVertices':int(removed.sum()),'vertices':len(P),'triangles':len(I),'bytes':output.stat().st_size,'blend':str(blend)}))

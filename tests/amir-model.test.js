@@ -10,6 +10,29 @@ function glb(file) {
   return { json, read, bytes: b.length, p: json.meshes[0].primitives[0] };
 }
 const old = glb('amir.glb'), model = glb('amir-fighter.glb');
+test('both fists have outward faces and matching surface normals', () => {
+  const { json: j, read, p } = model, pos = read(p.attributes.POSITION), index = read(p.indices), joints = read(p.attributes.JOINTS_0), weights = read(p.attributes.WEIGHTS_0), normals = read(p.attributes.NORMAL);
+  const parents = Uint32Array.from({ length: pos.length / 3 }, (_, i) => i), groups = new Map();
+  const find = i => { while (parents[i] !== i) { parents[i] = parents[parents[i]]; i = parents[i]; } return i; };
+  for (let i = 0; i < index.length; i += 3) { const root = find(index[i]); parents[find(index[i + 1])] = root; parents[find(index[i + 2])] = root; }
+  for (let i = 0; i < index.length; i += 3) { const root = find(index[i]); if (!groups.has(root)) groups.set(root, []); groups.get(root).push([...index.subarray(i, i + 3)]); }
+  for (const side of ['L', 'R']) {
+    let pieces = 0;
+    for (const faces of groups.values()) {
+      const ids = [...new Set(faces.flat())];
+      if (ids.length > 150 || !ids.every(i => joints[i * 4] === j.extras.bones.indexOf('forearm' + side) && weights[i * 4] > .99999)) continue;
+      const centre = [0, 1, 2].map(k => ids.reduce((sum, i) => sum + pos[i * 3 + k], 0) / ids.length);
+      for (const [a, b, c] of faces) {
+        const u = [0, 1, 2].map(k => pos[b * 3 + k] - pos[a * 3 + k]), v = [0, 1, 2].map(k => pos[c * 3 + k] - pos[a * 3 + k]);
+        const normal = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+        assert.ok(normal.reduce((sum, n, k) => sum + n * (pos[a * 3 + k] - centre[k]), 0) > 0, side + ' fist surface faces inward');
+        for (const i of [a, b, c]) assert.ok(normal.reduce((sum, n, k) => sum + n * normals[i * 3 + k], 0) > 0, side + ' fist normal disagrees with face');
+      }
+      pieces++;
+    }
+    assert.ok(pieces >= 10, side + ' fist components were not checked');
+  }
+});
 test('fighter GLB is compact, fully weighted, and has a standard compatible skin', () => {
   const { json: j, read, p } = model;
   assert.ok(model.bytes < 1024 * 1024); assert.ok(read(p.indices).length / 3 < 12500);
