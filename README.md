@@ -2,7 +2,7 @@
 
 Game lawan 1 lawan 1 untuk telefon. Watak remaja bertarung di satu gelanggang guna silat, boxing, MMA dan capoeira. Lawan komputer dulu.
 
-## Status: v0.5.2, penumbuk kanan dibetulkan
+## Status: v0.5.3, kekuda ikut gambar rujukan
 
 `index.html` ialah gelanggang latihan. **Jai**, budak gaduh jalanan tanpa disiplin tertentu, lawan kawan latih yang cuma terima pukulan. Jai memakai model Amir yang dikemaskan dalam Blender; kawan latih masih mannequin bersendi.
 
@@ -26,7 +26,7 @@ Masa latihan stamina tak terhad, jadi boleh serang tanpa henti. Butang "Penat" d
 
 Bantuan jarak: kalau serangan dimula bila lawan sedikit jauh (sampai lebih kurang 0.6 m dari jarak ideal), Jai melangkah masuk sendiri sebelum pukulan sampai. Lebih jauh dari tu, pukulan tersasar.
 
-**Kekuda.** Ikut bentuk kekuda dalam game lawan macam Tekken: badan menyerong, kaki lebar (lutut depan bengkok di atas kaki, kaki belakang panjang ke belakang), dada terbuka dan tegak. Tangan depan naik di paras dagu dengan lengan bawah hampir tegak dan siku ke bawah; lengan bawah tangan belakang melintang di depan dada.
+**Kekuda.** Kedua-dua penumbuk di sisi muka, siku terbuka sedikit dan menghala ke bawah, dagu direndahkan serta badan condong sedikit ke depan. Bahu kurang menyerong dan lengan belakang tidak lagi melintang di depan dada. Kaki kiri di depan dan tapak kekal lebar untuk imbangan. Setiap serangan kembali kepada kekuda ini.
 
 **Nafas.** Masa berdiri, dada Jai naik turun (lebih kurang sekali setiap 3 saat) dan badannya bergoyang sedikit macam peninju: berat badan beralih, kepala dan tangan bergerak, lutut lentur. Bila menyerang, dia tarik nafas dan tahan. Lepas serangan habis, nafas dihembus cepat, kemudian kembali ke rentak biasa. Makin banyak bergerak dan menyerang, makin laju dan dalam nafasnya, dan bila rehat ia reda semula. Kawan latih pun bernafas, dan lebih kuat selepas kena pukul. Logik nafas dalam `src/breath.js` (diuji dalam `tests/breath.test.js`).
 
@@ -47,6 +47,10 @@ blender -b --python scripts/refine-amir.py -- assets/models/amir.glb assets/mode
 Skrip mengekalkan susunan tulang dan sendi dalam `extras`, serta menambah skin glTF standard. Eksport Blender biasa perlu mengekalkan metadata dan susunan ini sebelum menggantikan GLB game. `npm test` mengesahkan saiz aset, berat tulang, bentuk kepala serta sampel pose setiap gerakan menggunakan GLTFLoader, IK dan skinning game sebenar tanpa WebGL. Render semakan di bawah menggunakan mesh yang dipose oleh kod game, dirender dalam Blender; ia bukan tangkapan skrin UI telefon.
 
 ![Semakan model Amir fighter](assets/previews/amir-fighter-review.jpg)
+
+Kekuda v0.5.3, dipose oleh kod game dan dirender dalam Blender:
+
+![Kekuda Amir v0.5.3](assets/previews/amir-stance-v053.png)
 
 Butang "Watak" dalam Senarai gerak tukar antara Amir dan mannequin. Kalau model gagal dimuat, mannequin digunakan.
 

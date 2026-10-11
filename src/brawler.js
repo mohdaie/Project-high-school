@@ -4,17 +4,15 @@ import { over } from './keyframes.js';
 // a knee, a shoulder barge and one bit of MMA, the headlock. Pure rules and
 // pose data; brawler-view.js draws it.
 
-// Orthodox stance, left side forward, in the shape fighting games use: body
-// bladed well side-on, a wide base (lead knee bent over the foot, rear leg
-// long behind), chest open and upright. The lead hand is up in front at chin
-// height with the forearm near vertical and the elbow down; the rear forearm
-// lies across the chest. Hand and foot targets are wrists and ankles in the
+// Reference stance: both fists beside the face, elbows a little outward,
+// chin tucked and torso leaning forward over a stable left-foot lead.
+// Hand and foot targets are wrists and ankles in the
 // fighter's space; e*/k* are elbow and knee directions; r* = [toe-down pitch,
 // yaw] of each foot.
 export const STANCE = {
-  hips: [.88, 0, -40, 0], spine: [5, 0, 0], chest: [0, 8, 0], neck: [0, 0, 0], head: [3, 32, 0],
-  hL: [.06, 1.5, .44], eL: [.35, -1, .1], hR: [.06, 1.32, .25], eR: [-1, -.35, 0],
-  fL: [.16, .075, .36], kL: [.15, 0, 1], fR: [-.22, .075, -.3], kR: [-.3, 0, 1], rL: [0, -25], rR: [10, -55],
+  hips: [.88, 0, -25, 0], spine: [10, 0, 0], chest: [0, 5, 0], neck: [4, 0, 0], head: [8, 20, 0],
+  hL: [.14, 1.58, .44], eL: [.65, -1, .1], hR: [-.12, 1.55, .4], eR: [-.65, -1, .1],
+  fL: [.16, .075, .36], kL: [.15, 0, 1], fR: [-.22, .075, -.3], kR: [-.3, 0, 1], rL: [0, -15], rR: [10, -35],
   fwd: [0]
 };
 const P = part => over(STANCE, part), S = P({});
