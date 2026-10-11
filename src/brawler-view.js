@@ -37,7 +37,8 @@ function useAmir(on) { wantAmir = on; showAmir = on && !!amir; me.m.root.visible
 // Hosts that cannot serve .glb get each model as base64 text beside it
 // (window.GLB_TXT set by the page).
 const glbText = window.GLB_TXT ? url => fetch(url + '.txt').then(r => r.text()).then(b => { const bin = atob(b.trim()), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new GLTFLoader().parseAsync(a.buffer, ''); }) : undefined;
-Promise.all([loadRig(undefined, glbText), loadModel(MODELS.amir, glbText)]).then(([rig, model]) => {
+const fighterModel = new URL('../assets/models/amir-fighter.glb', import.meta.url).href;
+Promise.all([loadRig(undefined, glbText), loadModel(fighterModel, glbText).catch(() => loadModel(MODELS.amir, glbText))]).then(([rig, model]) => {
   const a = createActor(scene, 0, 0, 'amir', rig, model); amir = { a, update: retarget(a, me.m, AMIR_SCALE) }; useAmir(wantAmir);
 }).catch(e => { console.warn('Amir unavailable', e); $('modelBtn').hidden = true; });
 

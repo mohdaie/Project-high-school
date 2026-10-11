@@ -25,7 +25,7 @@ export function retarget(actor, mannequin, scale = 1, { fists = true } = {}) {
   // Bind pose of the model, at the origin, scaled to size.
   group.position.set(0, 0, 0); group.rotation.set(0, 0, 0); group.scale.setScalar(scale);
   figure.skeleton.pose(); group.updateMatrixWorld(true);
-  if (fists) { sharpenJoints(actor); addFists(actor); }
+  if (fists && !actor.fighterReady) { sharpenJoints(actor); addFists(actor); }
   const down = new T.Vector3(0, -1, 0), bones = MAP.map(([b, n]) => {
     const o = bone(b), bind = wq(o), child = LIMBS[b.slice(0, -1)];
     const fix = child ? new T.Quaternion().setFromUnitVectors(down, w(bone(child + b.at(-1))).sub(w(o)).normalize()).invert() : new T.Quaternion();
