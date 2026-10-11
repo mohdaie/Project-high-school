@@ -2,9 +2,9 @@
 
 Game lawan 1 lawan 1 untuk telefon. Watak remaja bertarung di satu gelanggang guna silat, boxing, MMA dan capoeira. Lawan komputer dulu.
 
-## Status: v0.5.0, gelanggang latihan
+## Status: v0.5.1, model Amir fighter dari Blender
 
-`index.html` ialah gelanggang latihan. **Jai**, budak gaduh jalanan tanpa disiplin tertentu, lawan kawan latih yang cuma terima pukulan. Kedua-duanya mannequin bersendi buat masa ni.
+`index.html` ialah gelanggang latihan. **Jai**, budak gaduh jalanan tanpa disiplin tertentu, lawan kawan latih yang cuma terima pukulan. Jai memakai model Amir yang dikemaskan dalam Blender; kawan latih masih mannequin bersendi.
 
 Empat butang macam pad PS5. Arah joystick (ke lawan atau undur) pilih variasi setiap butang.
 
@@ -32,7 +32,19 @@ Bantuan jarak: kalau serangan dimula bila lawan sedikit jauh (sampai lebih kuran
 
 Pukulan yang kena beri hitstop, gegar kamera, bunyi dan nombor damage. Pukulan berturut-turut dalam 1.1 saat dikira combo. Bila HP kawan latih habis, dia jatuh (K.O.) dan bangun semula. Kamera dari sisi, sedikit di belakang Jai, supaya kedua-dua kaki nampak.
 
-**Model sebenar (ujian dengan Amir).** Jai sekarang memakai model Amir dari Malaysian-retro-game: satu badan bertekstur yang kulitnya melentur di sendi. Mannequin masih membuat semua pose (gerak, IK, nafas) tanpa kelihatan, dan `src/retarget.js` gerakkan tulang Amir ikut mannequin. Setiap tulang ambil putaran sendi mannequin dari posisi rehat, dengan pembetulan supaya lengan A-pose Amir tetap ikut lengan mannequin. Pinggul naik turun ikut panjang kaki Amir, dan kaki yang lebih rendah kekal di lantai. Amir dibesarkan 1.17 kali (dari 1.5 m ke lebih kurang 1.75 m) supaya jangkauan sama dengan mannequin. **Tangan dan siku.** Model image-to-3D macam Amir ada tangan bulat tanpa jari, dan kulitnya melentur terlalu panjang di siku sampai lengan nampak macam getah. `src/hands.js` tajamkan lipatan di siku, pergelangan dan lutut (pertukaran antara dua tulang jadi beberapa sentimeter saja di satah lipatan), lipat tangan asal ke dalam pergelangan, dan pakaikan penumbuk yang dimodel: jari melengkung, empat buku lima, ibu jari melintang, dan balutan tangan. Warna kulit penumbuk diambil dari tekstur tangan model.
+**Model Amir fighter (v0.5.1).** `assets/models/amir-fighter.glb` ialah model asal Amir yang dikemaskan dalam Blender. Bahagian lengan terdedah dibina semula dengan gelung mesh teratur, siku/lutut diberi berat tulang setempat, penumbuk lengkap dengan buku lima, ibu jari dan balutan menjadi sebahagian daripada satu mesh. Dagu dan rambut ikut tulang kepala tanpa tertarik oleh leher; beg ikut dada dan kasut ikut tulang kaki. Bentuk kepala, baju dan seluar asal dikekalkan. Eksport sekitar 811 KiB, 11,859 segi tiga dan satu tekstur 1024².
+
+Mannequin tetap membuat pose, IK dan nafas tanpa kelihatan. `src/retarget.js` menggerakkan model mengikutnya, pada skala 1.17. Metadata `fighterReady` memastikan game tidak memasang penumbuk kedua atau mengecilkan tangan model yang sudah siap. Jika aset fighter gagal dimuat, model Amir asal digunakan.
+
+**Sumber Blender.** `assets/models/amir-fighter.blend` mengandungi mesh, tekstur packed dan rangka `DEF-*` yang boleh diedit. Bina semula eksport yang serasi dengan rig game:
+
+```sh
+blender -b --python scripts/refine-amir.py -- assets/models/amir.glb assets/models/amir-fighter.glb assets/models/amir-fighter.blend
+```
+
+Skrip mengekalkan susunan tulang dan sendi dalam `extras`, serta menambah skin glTF standard. Eksport Blender biasa perlu mengekalkan metadata dan susunan ini sebelum menggantikan GLB game. `npm test` mengesahkan saiz aset, berat tulang, bentuk kepala serta sampel pose setiap gerakan menggunakan GLTFLoader, IK dan skinning game sebenar tanpa WebGL. Render semakan di bawah menggunakan mesh yang dipose oleh kod game, dirender dalam Blender; ia bukan tangkapan skrin UI telefon.
+
+![Semakan model Amir fighter](assets/previews/amir-fighter-review.jpg)
 
 Butang "Watak" dalam Senarai gerak tukar antara Amir dan mannequin. Kalau model gagal dimuat, mannequin digunakan.
 

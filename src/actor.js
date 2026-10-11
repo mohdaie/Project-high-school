@@ -569,7 +569,7 @@ function createModelActor(scene, x, z, kind, rig, model) {
   const { animate: move, wave, mixer, native } = attachMotion({ root, skeletonRoot, bone, rig, clips, scale: k, groundLock });
   const animate = (dt, moving, running, travel, action, state) => { move(dt, moving, running, travel, action, state); face?.update(dt, action === 'talk'); };
   root.userData.design = kind; root.userData.height = height;
-  return { group: root, figure, head: bone('head'), bone, height, animate, wave, mixer, scale: k, native, bikeScale: Math.min(1, leg / LEG + .08), actor: true, outfit, face };
+  return { group: root, figure, head: bone('head'), bone, height, animate, wave, mixer, scale: k, native, bikeScale: Math.min(1, leg / LEG + .08), actor: true, outfit, face, fighterReady: !!model.parser.json.extras.fighterReady };
 }
 // Turn a bone so its child points at a world target (bind-time fitting).
 function aimBone(b, child, target) {
