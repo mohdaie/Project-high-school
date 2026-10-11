@@ -2,7 +2,7 @@
 
 Game lawan 1 lawan 1 untuk telefon. Watak remaja bertarung di satu gelanggang guna silat, boxing, MMA dan capoeira. Lawan komputer dulu.
 
-## Status: v0.5.1, model Amir fighter dari Blender
+## Status: v0.5.2, penumbuk kanan dibetulkan
 
 `index.html` ialah gelanggang latihan. **Jai**, budak gaduh jalanan tanpa disiplin tertentu, lawan kawan latih yang cuma terima pukulan. Jai memakai model Amir yang dikemaskan dalam Blender; kawan latih masih mannequin bersendi.
 
@@ -32,9 +32,11 @@ Bantuan jarak: kalau serangan dimula bila lawan sedikit jauh (sampai lebih kuran
 
 Pukulan yang kena beri hitstop, gegar kamera, bunyi dan nombor damage. Pukulan berturut-turut dalam 1.1 saat dikira combo. Bila HP kawan latih habis, dia jatuh (K.O.) dan bangun semula. Kamera dari sisi, sedikit di belakang Jai, supaya kedua-dua kaki nampak.
 
-**Model Amir fighter (v0.5.1).** `assets/models/amir-fighter.glb` ialah model asal Amir yang dikemaskan dalam Blender. Bahagian lengan terdedah dibina semula dengan gelung mesh teratur, siku/lutut diberi berat tulang setempat, penumbuk lengkap dengan buku lima, ibu jari dan balutan menjadi sebahagian daripada satu mesh. Dagu dan rambut ikut tulang kepala tanpa tertarik oleh leher; beg ikut dada dan kasut ikut tulang kaki. Bentuk kepala, baju dan seluar asal dikekalkan. Eksport sekitar 811 KiB, 11,859 segi tiga dan satu tekstur 1024².
+**Model Amir fighter (v0.5.2).** `assets/models/amir-fighter.glb` ialah model asal Amir yang dikemaskan dalam Blender. Bahagian lengan terdedah dibina semula dengan gelung mesh teratur, siku/lutut diberi berat tulang setempat, penumbuk lengkap dengan buku lima, ibu jari dan balutan menjadi sebahagian daripada satu mesh. Dagu dan rambut ikut tulang kepala tanpa tertarik oleh leher; beg ikut dada dan kasut ikut tulang kaki. Bentuk kepala, baju dan seluar asal dikekalkan. Eksport sekitar 811 KiB, 11,859 segi tiga dan satu tekstur 1024².
 
 Mannequin tetap membuat pose, IK dan nafas tanpa kelihatan. `src/retarget.js` menggerakkan model mengikutnya, pada skala 1.17. Metadata `fighterReady` memastikan game tidak memasang penumbuk kedua atau mengecilkan tangan model yang sudah siap. Jika aset fighter gagal dimuat, model Amir asal digunakan.
+
+Penumbuk kanan yang dicerminkan kini mempunyai permukaan menghadap keluar. Ujian aset memeriksa arah setiap segi tiga dan normal pada kedua-dua penumbuk, selain semakan 147 pose.
 
 **Sumber Blender.** `assets/models/amir-fighter.blend` mengandungi mesh, tekstur packed dan rangka `DEF-*` yang boleh diedit. Bina semula eksport yang serasi dengan rig game:
 
