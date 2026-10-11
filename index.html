@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Project High School</title>
+  <style>
+    :root { --ink: #1f1c2b; --paper: #f4ecdc; --red: #d8322a; --gold: #e8a83a; --stam: #6cc4a1; --line: #f4ecdc40; }
+    html, body { margin: 0; height: 100%; background: var(--ink); color: var(--paper); font: 600 14px/1.2 system-ui, sans-serif; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    [hidden] { display: none !important; }
+    canvas { display: block; width: 100%; height: 100%; }
+    #hud { position: fixed; inset: 0; pointer-events: none; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+    .bars { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); left: 16px; right: 16px; display: flex; justify-content: space-between; gap: 24px; }
+    .bar { flex: 1; max-width: 300px; }
+    .bar b { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+    .bar small { font-weight: 500; opacity: .7; letter-spacing: 0; text-transform: none; }
+    .track { height: 10px; border: 2px solid var(--paper); border-radius: 3px; overflow: hidden; background: #0006; }
+    .track i { display: block; height: 100%; width: 100%; transition: width .12s; }
+    #stam { background: var(--stam); } #stam.low { background: var(--gold); } #hp { background: var(--red); margin-left: auto; }
+    .bar.right { text-align: right; }
+    #pop { position: absolute; top: 22%; left: 0; right: 0; text-align: center; font-size: 26px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 3px 0 var(--ink); }
+    #pop.warn { color: var(--gold); } #pop.ko { color: var(--red); font-size: 56px; }
+    #combo { position: absolute; top: 31%; left: 0; right: 0; text-align: center; color: var(--gold); font-size: 18px; font-weight: 900; text-shadow: 0 2px 0 var(--ink); }
+    .dmg { position: absolute; transform: translate(-50%, -50%); font-size: 20px; font-weight: 900; color: var(--paper); text-shadow: 0 2px 0 var(--ink); animation: rise .8s ease-out forwards; }
+    .dmg.big { font-size: 30px; color: var(--gold); }
+    @keyframes rise { to { transform: translate(-50%, -150%); opacity: 0; } }
+    #pad { position: fixed; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template: ". t ." 64px "s . c" 64px ". x ." 64px / 64px 64px 64px; gap: 2px; }
+    #pad button { width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--line); background: #2c2740d9; color: var(--paper); font: 800 10px/1 system-ui, sans-serif; touch-action: none; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+    #pad button span { font-size: 22px; line-height: 1; font-weight: 400; }
+    .tri span { color: #3fd0a5; } .sq span { color: #e98fd3; } .ci span { color: #ff6464; } .cr span { color: #7fa8ff; }
+    #pad button.on { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+    #pad button kbd { font: 600 9px system-ui; opacity: .55; }
+    #listBtn { position: fixed; top: calc(40px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); font: 700 12px system-ui, sans-serif; color: var(--paper); background: #2c2740d9; border: 2px solid var(--line); border-radius: 999px; padding: 6px 12px; }
+    #list { position: fixed; top: calc(76px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: min(340px, calc(100% - 32px)); max-height: calc(100% - 96px); overflow: auto; background: #1f1c2bf2; border: 2px solid var(--line); border-radius: 12px; padding: 10px 14px; font-weight: 500; }
+    #list table { border-collapse: collapse; width: 100%; } #list td { padding: 4px 0; } #list td:first-child { white-space: nowrap; padding-right: 12px; font-weight: 800; color: var(--gold); }
+    #list p { margin: 8px 0 0; font-size: 12px; opacity: .85; }
+    #tiredBtn, #modelBtn { font: 700 12px system-ui, sans-serif; color: var(--ink); background: var(--gold); border: 0; border-radius: 999px; padding: 5px 10px; margin-right: 6px; }
+    #stick { position: fixed; left: 0; top: 0; width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--line); background: #0003; pointer-events: none; }
+    #knob { position: absolute; left: 38px; top: 38px; width: 44px; height: 44px; border-radius: 50%; background: #f4ecdc99; transition: background .1s; } #knob.run { background: var(--gold); }
+    #help { position: fixed; left: calc(16px + env(safe-area-inset-left, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); max-width: 40%; font-weight: 500; font-size: 12px; opacity: .6; }
+    #loading { position: fixed; inset: 0; display: grid; place-items: center; background: var(--ink); }
+    @media (hover: none) { #pad button kbd { display: none; } }
+    @media (max-height: 360px) { #pad { grid-template: ". t ." 54px "s . c" 54px ". x ." 54px / 54px 54px 54px; } #pad button { width: 54px; height: 54px; } }
+    @media (prefers-reduced-motion: reduce) { .dmg { animation-duration: .01s; } }
+  </style>
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
+</head>
+<body>
+  <canvas id="view" aria-label="Gelanggang latihan: Jai lawan kawan latih"></canvas>
+  <div id="hud">
+    <div class="bars">
+      <div class="bar"><b>Jai <small>· gaduh jalanan</small></b><div class="track" id="stamWrap" hidden><i id="stam"></i></div></div>
+      <div class="bar right"><b>Kawan latih</b><div class="track"><i id="hp"></i></div></div>
+    </div>
+    <div id="pop"></div>
+    <div id="combo" hidden></div>
+  </div>
+  <div id="stick" hidden><div id="knob"></div></div>
+  <p id="help">Sentuh kiri skrin untuk joystick. Tolak sikit jalan, tolak habis lari.<br>Keyboard: WASD gerak, Shift lari, I J L K butang.</p>
+  <div id="pad" aria-label="Butang serangan">
+    <button data-act="tendang" class="tri" style="grid-area:t"><span>△</span>Tendang<kbd>I</kbd></button>
+    <button data-act="tumbuk" class="sq" style="grid-area:s"><span>□</span>Tumbuk<kbd>J</kbd></button>
+    <button data-act="kasar" class="ci" style="grid-area:c"><span>○</span>Kasar<kbd>L</kbd></button>
+    <button data-act="tahan" class="cr" style="grid-area:x"><span>✕</span>Tahan<kbd>K</kbd></button>
+  </div>
+  <button id="listBtn" aria-expanded="false" aria-controls="list">Senarai gerak</button>
+  <div id="list" hidden>
+    <table>
+      <tr><td>□ □ □</td><td>Jab, straight, <b>hayun</b></td></tr>
+      <tr><td>← □</td><td>Uppercut</td></tr>
+      <tr><td>△</td><td><b>Tendang hayun</b> ke kepala</td></tr>
+      <tr><td>→ △</td><td>Push kick</td></tr>
+      <tr><td>← △</td><td>Sepak bawah</td></tr>
+      <tr><td>○ dekat</td><td>Kepit kepala</td></tr>
+      <tr><td>○ jauh</td><td>Rempuh</td></tr>
+      <tr><td>→ ○</td><td>Lutut</td></tr>
+      <tr><td>← ○</td><td>Ejek (isi stamina)</td></tr>
+      <tr><td>✕ tahan</td><td>Tutup muka</td></tr>
+    </table>
+    <p><button id="modelBtn">Watak: Amir</button> Tukar antara model Amir dan mannequin.</p>
+    <p><button id="tiredBtn">Penat: tak</button> Stamina tak terhad masa latihan. Tekan untuk hidupkan.</p>
+    <p>→ mara ke lawan, ← undur. Tolak joystick sikit untuk jalan perlahan, tolak habis untuk lari.</p>
+  </div>
+  <div id="loading">Memuatkan gelanggang…</div>
+  <script type="module" src="./src/brawler-view.js"></script>
+</body>
+</html>

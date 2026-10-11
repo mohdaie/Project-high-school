@@ -1,0 +1,11 @@
+{
+  "name": "project-high-school",
+  "version": "0.5.1",
+  "private": true,
+  "type": "module",
+  "description": "Teen 1v1 fighting game for phones: silat, boxing, MMA and capoeira.",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "test": "node --test tests/*.test.js"
+  }
+}
