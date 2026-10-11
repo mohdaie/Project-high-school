@@ -6,7 +6,7 @@ import { newBreath, breathe } from './breath.js';
 import { loadRig, loadModel, createActor, MODELS } from './actor.js';
 import { retarget } from './retarget.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { STANCE, GUARD, PARTNER, MOVES, newFighter, press, tick, activeHits, grabbing } from './brawler.js';
+import { STANCE, GUARD, PARTNER, MOVES, newFighter, press, tick, activeHits, grabbing } from './brawler.js?v=0.5.3';
 
 // Training ring: Jai against a sparring partner who takes the hits.
 // Camera from the side, Jai on the left. Stick: right = toward the partner,
