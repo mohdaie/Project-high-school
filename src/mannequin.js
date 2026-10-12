@@ -43,7 +43,9 @@ export function createMannequin(scene, { body = 0xd9a36c, joint = 0x6b4630, band
   // Breath (-1 out .. 1 in): the ribcage widens and deepens, the belly draws in.
   const breathe = v => { ribs.scale.set(1 + .025 * v, 1 + .015 * v, 1 + .07 * v); belly.scale.set(1 - .02 * v, 1, 1 - .05 * v); ribs.position.z = .006 * v;
     for (const m of [ribs, belly]) m.parent.children.filter(c => c.userData.ink && c.geometry === m.geometry).forEach(h => { h.scale.copy(m.scale); h.position.copy(m.position); }); };
-  return { root, j, meshes, point, flash, breathe, pose: p => applyPose(root, j, p) };
+  // grip: [left, right], 0 open hand .. 1 fist (worn by a model with fingers).
+  const m = { root, j, meshes, point, flash, breathe, grip: [1, 1], pose: p => { applyPose(root, j, p); m.grip = p.g ?? [1, 1]; } };
+  return m;
 }
 
 const vS = new T.Vector3(), vT = new T.Vector3(), vP = new T.Vector3(), vE = new T.Vector3(), vD = new T.Vector3(), vX = new T.Vector3(), vY = new T.Vector3(), vZ = new T.Vector3(), vF = new T.Vector3();

@@ -16,13 +16,19 @@ async function parse(file) {
 const rig = await loadRig(undefined, () => parse('kids-mocap.glb')), model = await parse('amir-fighter.glb'), scene = new T.Scene(), m = createMannequin(scene), a = createActor(scene, 0, 0, 'amir', rig, model), update = retarget(a, m, 1.17);
 assert.equal(a.fighterReady, true); assert.equal(a.fists, undefined);
 for (const s of ['L', 'R']) assert.ok(Math.abs(a.bone('hand' + s).scale.x - 1) < 1e-10);
-const poses = [['stance', STANCE], ['guard', GUARD], ['jab', sample(MOVES.jab.keys, .1)], ['kick', sample(MOVES.roundhouse.keys, .3)]];
+const capture = ['stance', 'guard', 'jab', 'kick', 'open', 'taunt'], poses = [['stance', STANCE], ['guard', GUARD], ['jab', sample(MOVES.jab.keys, .1)], ['kick', sample(MOVES.roundhouse.keys, .3)], ['open', { ...STANCE, g: [0, 0] }], ['taunt', sample(MOVES.taunt.keys, .5)]];
 for (const [name, move] of Object.entries(MOVES)) for (let i = 0; i <= 12; i++) poses.push([name + i, sample(move.keys, move.dur * i / 12)]);
-const output = {}, v = new T.Vector3();
+const output = {}, v = new T.Vector3(), w = n => a.bone(n).getWorldPosition(new T.Vector3()), curl = {};
 for (const [name, pose] of poses) {
-  m.pose(pose); update(); scene.updateMatrixWorld(true); a.figure.skeleton.update(); const points = [], capture = ['stance', 'guard', 'jab', 'kick'].includes(name);
-  for (let i = 0; i < a.figure.geometry.attributes.position.count; i++) { a.figure.getVertexPosition(i, v).applyMatrix4(a.figure.matrixWorld); assert.ok(v.toArray().every(Number.isFinite)); assert.ok(Math.abs(v.x) < 3 && Math.abs(v.z) < 3 && v.y > -.25 && v.y < 3, name); if (capture) points.push(v.toArray()); }
-  if (['stance', 'guard', 'jab', 'kick'].includes(name)) output[name] = { vertices: points, extras: [] };
+  m.pose(pose); update(); scene.updateMatrixWorld(true); a.figure.skeleton.update(); const points = [], keep = capture.includes(name);
+  for (let i = 0; i < a.figure.geometry.attributes.position.count; i++) { a.figure.getVertexPosition(i, v).applyMatrix4(a.figure.matrixWorld); assert.ok(v.toArray().every(Number.isFinite)); assert.ok(Math.abs(v.x) < 3 && Math.abs(v.z) < 3 && v.y > -.25 && v.y < 3, name); if (keep) points.push(v.toArray()); }
+  if (keep) output[name] = { vertices: points, extras: [] };
+  // Fingertip reach: the distal joint's distance from the wrist.
+  curl[name] = ['L', 'R'].map(s => w('f_middle03' + s).distanceTo(w('hand' + s)));
 }
+// Every finger bone is in the skin; fists close and open hands open.
+const used = new Set(a.figure.geometry.attributes.skinIndex.array);
+for (const s of ['L', 'R']) for (const f of ['thumb', 'f_index', 'f_middle', 'f_ring', 'f_pinky']) for (const k of [1, 2, 3]) assert.ok(used.has(a.figure.skeleton.bones.indexOf(a.bone(f + '0' + k + s))), f + k + s + ' unweighted');
+for (const k of [0, 1]) { assert.ok(curl.stance[k] < curl.open[k] * .75, 'fist did not close'); assert.ok(curl.taunt[k] > curl.stance[k] * 1.2, 'taunt hand did not open'); }
 if (process.argv[2]) writeFileSync(process.argv[2], JSON.stringify(output));
 console.log(`Validated ${poses.length} fighting poses`);

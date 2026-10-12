@@ -75,3 +75,11 @@ test('a tireless fighter attacks forever', () => {
   for (let i = 0; i < 30; i++) { assert.ok(press(f, 'tendang').move); tick(f, 1); }
   assert.equal(f.stamina, STAMINA.max);
 });
+
+test('fists by default; the taunt opens both hands and the headlock cups the neck', () => {
+  assert.deepEqual(STANCE.g, [1, 1]);
+  for (const key of ['jab', 'cross', 'uppercut', 'haymaker', 'knee']) for (const [, pose] of MOVES[key].keys) assert.deepEqual(pose.g, [1, 1], key);
+  const taunt = sample(MOVES.taunt.keys, .35).g, hold = sample(MOVES.headlock.keys, .5).g;
+  assert.ok(taunt[0] < .2 && taunt[1] < .2); assert.ok(hold[0] > .2 && hold[0] < .8 && hold[1] === 1);
+  for (const [, pose] of MOVES.taunt.keys) for (const v of pose.g) assert.ok(v >= 0 && v <= 1);
+});

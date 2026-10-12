@@ -504,6 +504,7 @@ function attachMotion({ root, skeletonRoot, bone, rig, clips, scale, groundLock 
 // rotations as recorded, hip travel scaled to the shorter legs, no baked bone
 // lengths. A ground lock keeps the feet on the floor.
 const STAND = .065, LEG = .673;
+export const FINGERS = ['thumb', 'f_index', 'f_middle', 'f_ring', 'f_pinky'];
 // Where each drawn face sits, as fractions of the head's bind-pose bounds.
 const FACE_RECTS = { amir: { kind: 'amir', halfWidth: .42, bottom: .0, top: .6 }, nur: { kind: 'nur', halfWidth: .42, bottom: .0, top: .6 } };
 function createModelActor(scene, x, z, kind, rig, model) {
@@ -524,6 +525,8 @@ function createModelActor(scene, x, z, kind, rig, model) {
     root.updateMatrixWorld(true);
     aimBone(bone('upper_arm' + s), bone('forearm' + s), target('forearm' + s));
     aimBone(bone('forearm' + s), bone('hand' + s), target('hand' + s));
+    // Fighter models carry finger joints; the rig's finger bones move onto them.
+    for (const f of FINGERS) for (const k of [1, 2, 3]) if (J[f + '0' + k + s]) placeAt(f + '0' + k + s, target(f + '0' + k + s));
   }
   root.updateMatrixWorld(true);
   const bones = []; skeletonRoot.traverse(o => { if (o.isBone) bones.push(o); });

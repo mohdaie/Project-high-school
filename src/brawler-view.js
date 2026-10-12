@@ -6,7 +6,7 @@ import { newBreath, breathe } from './breath.js';
 import { loadRig, loadModel, createActor, MODELS } from './actor.js';
 import { retarget } from './retarget.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { STANCE, GUARD, PARTNER, MOVES, newFighter, press, tick, activeHits, grabbing } from './brawler.js?v=0.5.3';
+import { STANCE, GUARD, PARTNER, MOVES, newFighter, press, tick, activeHits, grabbing } from './brawler.js?v=0.6.0';
 
 // Training ring: Jai against a sparring partner who takes the hits.
 // Camera from the side, Jai on the left. Stick: right = toward the partner,
@@ -37,7 +37,7 @@ function useAmir(on) { wantAmir = on; showAmir = on && !!amir; me.m.root.visible
 // Hosts that cannot serve .glb get each model as base64 text beside it
 // (window.GLB_TXT set by the page).
 const glbText = window.GLB_TXT ? url => fetch(url.replace(/(\?|$)/, '.txt$1')).then(r => r.text()).then(b => { const bin = atob(b.trim()), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new GLTFLoader().parseAsync(a.buffer, ''); }) : undefined;
-const fighterModel = new URL('../assets/models/amir-fighter.glb?v=0.5.2', import.meta.url).href;
+const fighterModel = new URL('../assets/models/amir-fighter.glb?v=0.6.0', import.meta.url).href;
 Promise.all([loadRig(undefined, glbText), loadModel(fighterModel, glbText).catch(() => loadModel(MODELS.amir, glbText))]).then(([rig, model]) => {
   const a = createActor(scene, 0, 0, 'amir', rig, model); amir = { a, update: retarget(a, me.m, AMIR_SCALE) }; useAmir(wantAmir);
 }).catch(e => { console.warn('Amir unavailable', e); $('modelBtn').hidden = true; });
@@ -134,13 +134,19 @@ function checkHits(d) {
 const SPEED = { fwd: 3.4, back: 1.8, side: 2.2, guard: .8 }, FREQ = 2.1, DEAD = .12;
 const d = new T.Vector3(), n = new T.Vector3(), want = new T.Vector3(), camPos = new T.Vector3(0, 1.4, 4.5), look = new T.Vector3(0, 1, 0);
 const xw = new T.Vector3(), zw = new T.Vector3(), held = new T.Vector3();
-// Standing by: weight rocks between the feet, the head and hands drift,
-// knees give a little; livelier as effort builds.
-function sway(p, effort) {
-  const a = .6 + .6 * effort, w = Math.sin(now * 1.7), b = Math.sin(now * 3.4 + 1);
-  p.hips[0] -= (.012 + .01 * effort) * (1 + b) / 2; p.hips[2] += 4 * a * w; p.hips[3] += 1.5 * a * w;
-  p.chest[1] -= 2 * a * w; p.head[0] += 2 * a * Math.sin(now * 2.3); p.head[1] += 2.5 * a * Math.sin(now * 1.3);
-  p.hL[0] += .015 * a * Math.sin(now * 2.1); p.hL[1] += .02 * a * Math.sin(now * 2.6 + 2); p.hR[1] += .015 * a * Math.sin(now * 2.2 + 4);
+// Standing by, street style: he bounces on the balls of his feet (heels
+// up, knees giving on each landing), shoulders roll against each other,
+// the head bobs and slips, the hands stay busy and the lead hand paws out
+// every few seconds. Livelier as effort builds.
+const BOUNCE = 1.9, PAW = 2.6;
+function bounce(p, effort) {
+  const a = .7 + .5 * effort, ph = now * Math.PI * 2 * BOUNCE, up = Math.abs(Math.sin(ph)), roll = Math.sin(ph / 2), w = Math.sin(now * 1.3);
+  p.hips[0] -= .024 * a * (1 - up); p.hips[2] += 5 * a * roll + 3 * w; p.hips[3] += 2 * a * w;
+  p.chest[1] -= 7 * a * roll; p.chest[2] += 3 * a * roll; p.head[0] += 3 * a * (up - .5); p.head[2] -= 4 * a * roll; p.head[1] += 4 * Math.sin(now * .9);
+  p.rL[0] += 12 * up; p.rR[0] += 16 * up;
+  p.hL[1] += .025 * a * up; p.hR[1] += .02 * a * Math.abs(Math.sin(ph + .6)); p.hL[0] += .02 * roll; p.hR[0] += .02 * roll;
+  const c = now % PAW / PAW, paw = c > .82 && !me.f.guard ? Math.sin((c - .82) / .18 * Math.PI) : 0;
+  p.hL[2] += .16 * paw; p.hL[1] -= .03 * paw; p.g[0] -= .35 * paw;
   return p;
 }
 // Breath on top of any pose: the chest lifts and opens, shoulders and hands
@@ -151,15 +157,18 @@ function breath(p, v, m) {
   p.hips[0] += .004 * v; m.breathe(v); return p;
 }
 function walk(p, v, dt) {
-  const speed = v.length(); if (speed < .05) return sway(p, me.breath.effort);
+  const speed = v.length(); if (speed < .05) return bounce(p, me.breath.effort);
   const run = T.MathUtils.smoothstep(speed, 1.6, 3), freq = FREQ * (1 + .55 * run);
   me.phase += dt * Math.PI * 2 * freq * Math.min(1, .5 + speed / 2);
   xw.set(Math.cos(me.yaw), 0, -Math.sin(me.yaw)); zw.set(Math.sin(me.yaw), 0, Math.cos(me.yaw));
   const lx = v.dot(xw) / speed, lz = v.dot(zw) / speed, amp = speed / freq / 4;
   for (const [f, o] of [['fL', 0], ['fR', Math.PI]]) {
     const s = Math.sin(me.phase + o), c = Math.cos(me.phase + o);
-    p[f][0] += lx * amp * s; p[f][2] += lz * amp * s; p[f][1] += Math.max(0, c) * (.07 + .13 * run);
+    p[f][0] += lx * amp * s; p[f][2] += lz * amp * s; p[f][1] += Math.max(0, c) * (.035 + .16 * run);
   }
+  // Walking is a low shuffle: up on the toes, shoulders rolling with the step.
+  const roll = Math.sin(me.phase) * (1 - run);
+  p.chest[1] -= 8 * roll; p.chest[2] += 3 * roll; p.head[2] -= 3 * roll; p.rL[0] += 12 * (1 - run); p.rR[0] += 14 * (1 - run);
   // Running: lower, lean into it, hands drop from the guard and pump.
   p.hips[0] -= (.02 + .04 * run) * Math.abs(Math.sin(me.phase * 2)) + .03 * run;
   p.spine[0] += 16 * run * Math.max(0, lz);
@@ -227,7 +236,7 @@ function step(dt) {
   camera.lookAt(look);
   // Close-up views for checks (window.brawler.debug.cam = 'side' | 'front').
   if (debug.view) { const [a, b, h] = debug.view, c = me.pos.clone().setY(1.05); camera.position.copy(c).addScaledVector(d, a).addScaledVector(n, b).setY(h); camera.lookAt(c); }
-  else if (debug.zoom) { const h = amir.a.fists.L.localToWorld(new T.Vector3(0, .05, 0)); camera.position.copy(h).add(new T.Vector3(debug.zoom[0], .05, debug.zoom[1]).applyAxisAngle(T.Object3D.DEFAULT_UP, me.yaw).multiplyScalar(.45)); camera.lookAt(h); }
+  else if (debug.zoom) { const h = amir.a.bone('handL').localToWorld(new T.Vector3(0, .05, 0)); camera.position.copy(h).add(new T.Vector3(debug.zoom[0], .05, debug.zoom[1]).applyAxisAngle(T.Object3D.DEFAULT_UP, me.yaw).multiplyScalar(.45)); camera.lookAt(h); }
   else if (debug.cam) { const c = me.pos.clone().setY(1.35); camera.position.copy(c).addScaledVector(debug.cam === 'side' ? n : d, 1.3).addScaledVector(debug.cam === 'side' ? d : n, debug.cam === 'side' ? .2 : 1.2); camera.lookAt(c.addScaledVector(d, .2)); }
   // HUD
   $('stam').style.width = `${me.f.stamina}%`; $('stam').classList.toggle('low', me.f.stamina < 20); $('hp').style.width = `${foe.hp}%`;

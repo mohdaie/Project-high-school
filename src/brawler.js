@@ -8,11 +8,11 @@ import { over } from './keyframes.js';
 // chin tucked and torso leaning forward over a stable left-foot lead.
 // Hand and foot targets are wrists and ankles in the
 // fighter's space; e*/k* are elbow and knee directions; r* = [toe-down pitch,
-// yaw] of each foot.
+// yaw] of each foot; g = [left, right] grip, 0 open hand .. 1 fist.
 export const STANCE = {
   hips: [.88, 0, -25, 0], spine: [10, 0, 0], chest: [0, 5, 0], neck: [4, 0, 0], head: [8, 20, 0],
   hL: [.14, 1.58, .44], eL: [.65, -1, .1], hR: [-.12, 1.55, .4], eR: [-.65, -1, .1],
-  fL: [.16, .075, .36], kL: [.15, 0, 1], fR: [-.22, .075, -.3], kR: [-.3, 0, 1], rL: [0, -15], rR: [10, -35],
+  fL: [.16, .075, .36], kL: [.15, 0, 1], fR: [-.22, .075, -.3], kR: [-.3, 0, 1], rL: [0, -15], rR: [10, -35], g: [1, 1],
   fwd: [0]
 };
 const P = part => over(STANCE, part), S = P({});
@@ -70,18 +70,18 @@ export const MOVES = {
     [.44, at(.8, { hips: [.86, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.05, 1.3, .12], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.18, .075, -.2] })], [.72, at(.8)]],
     hits: [{ t: [.24, .42], part: 'shoulderL', dmg: 8, zone: 'body', knock: 1.5 }] },
   taunt: { name: 'Ejek', cost: 0, dur: 1.3, gain: 25, keys: [[0, S],
-    [.3, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 0, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10] })],
-    [.65, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 20, 0], hL: [.25, 1.6, .35], hR: [-.55, 1.25, .2], eL: [1, -1, 0], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10] })],
-    [.95, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, -10, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10] })], [1.3, S]],
+    [.3, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 0, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10], g: [0, 0] })],
+    [.65, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 20, 0], hL: [.25, 1.6, .35], hR: [-.55, 1.25, .2], eL: [1, -1, 0], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10], g: [.75, 0] })],
+    [.95, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, -10, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10], g: [0, 0] })], [1.3, S]],
     hits: [] }
 };
 
 // The headlock: wrap the left arm round the opponent's neck, three short
 // uppercuts, then shove them off. `grab` is when the opponent is held.
-const WRAP = { hips: [.88, 0, -40, 0], spine: [20, 0, 0], chest: [0, -15, 0], head: [10, 55, 0], hL: [0, 1.15, .35], eL: [1, .2, .4] };
+const WRAP = { hips: [.88, 0, -40, 0], spine: [20, 0, 0], chest: [0, -15, 0], head: [10, 55, 0], hL: [0, 1.15, .35], eL: [1, .2, .4], g: [.45, 1] };
 const DIP = { ...WRAP, hR: [-.15, 1, .25], eR: [-.4, -1, 0] }, UP = { ...WRAP, hR: [-.02, 1.25, .55], eR: [-.3, -1, .3] };
 MOVES.headlock = { name: 'Kepit kepala', cost: 20, dur: 2.4, reach: 1.15, grab: [.3, 2.02], keys: [[0, S],
-  [.22, at(.1, { spine: [15, 0, 0], hL: [.3, 1.4, .75], eL: [1, .3, 0], hR: [-.05, 1.4, .6] })],
+  [.22, at(.1, { spine: [15, 0, 0], hL: [.3, 1.4, .75], eL: [1, .3, 0], hR: [-.05, 1.4, .6], g: [.2, 1] })],
   [.4, at(.1, WRAP)], [.55, at(.1, DIP)], [.7, at(.1, UP)], [.9, at(.1, DIP)], [1.15, at(.1, UP)], [1.35, at(.1, DIP)], [1.6, at(.1, UP)], [1.85, at(.1, DIP)],
   [2.05, at(.2, { spine: [0, 0, 0], hL: [.15, 1.35, .8], hR: [-.1, 1.35, .8], eL: [.5, -1, 0], eR: [-.5, -1, 0] })], [2.4, at(.2)]],
   hits: [.7, 1.15, 1.6].map(t => ({ t: [t - .05, t + .05], part: 'handR', dmg: 5, zone: 'head', knock: 0, auto: true }))
