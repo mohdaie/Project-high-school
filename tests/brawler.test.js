@@ -75,3 +75,12 @@ test('a tireless fighter attacks forever', () => {
   for (let i = 0; i < 30; i++) { assert.ok(press(f, 'tendang').move); tick(f, 1); }
   assert.equal(f.stamina, STAMINA.max);
 });
+
+test('the stance follows Jai\'s reference photo and the taunt opens his hands', () => {
+  // Lead fist up in front of the face, rear fist tucked at the jaw with its elbow flared out.
+  assert.ok(STANCE.hL[2] > STANCE.hR[2] + .1 && STANCE.hL[1] > 1.35, 'lead fist out in front of the face');
+  assert.ok(STANCE.hR[0] < 0 && STANCE.eR[0] <= -1 && STANCE.eL[1] <= -1, 'rear elbow flared, lead elbow down');
+  assert.ok(STANCE.hips[2] < -30 && STANCE.head[1] > 40, 'chest turned open, head back to the opponent');
+  assert.deepEqual(STANCE.g, [1, 1], 'both hands closed');
+  assert.ok(MOVES.taunt.keys.some(([, p]) => p.g[0] < .5 && p.g[1] < .5), 'the taunt beckons with open hands');
+});

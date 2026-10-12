@@ -4,16 +4,18 @@ import { over } from './keyframes.js';
 // a knee, a shoulder barge and one bit of MMA, the headlock. Pure rules and
 // pose data; brawler-view.js draws it.
 
-// Reference stance: both fists beside the face, elbows a little outward,
-// chin tucked and torso leaning forward over a stable left-foot lead.
-// Hand and foot targets are wrists and ankles in the
-// fighter's space; e*/k* are elbow and knee directions; r* = [toe-down pitch,
-// yaw] of each foot.
+// Reference stance (Jai's photo): chest turned open over a left-foot lead,
+// head turned back to the opponent with the chin down. The lead fist is up
+// in front of the face, its elbow tucked; the rear fist, wrapped, sits at the
+// right jaw with the elbow flared out and down.
+// Hand and foot targets are wrists and ankles in the fighter's space; e*/k*
+// are elbow and knee directions; r* = [toe-down pitch, yaw] of each foot;
+// g = [left, right] hand grip, 0 open to 1 a closed fist.
 export const STANCE = {
-  hips: [.88, 0, -25, 0], spine: [10, 0, 0], chest: [0, 5, 0], neck: [4, 0, 0], head: [8, 20, 0],
-  hL: [.14, 1.58, .44], eL: [.65, -1, .1], hR: [-.12, 1.55, .4], eR: [-.65, -1, .1],
+  hips: [.88, 0, -40, 0], spine: [8, 0, 0], chest: [0, -12, 0], neck: [8, 5, 0], head: [10, 48, 0],
+  hL: [.07, 1.42, .36], eL: [.35, -1, .05], hR: [-.12, 1.49, .15], eR: [-1, -.8, .25],
   fL: [.16, .075, .36], kL: [.15, 0, 1], fR: [-.22, .075, -.3], kR: [-.3, 0, 1], rL: [0, -15], rR: [10, -35],
-  fwd: [0]
+  g: [1, 1], fwd: [0]
 };
 const P = part => over(STANCE, part), S = P({});
 const at = (fwd, part = {}) => P({ ...part, fwd: [fwd] });
@@ -70,9 +72,9 @@ export const MOVES = {
     [.44, at(.8, { hips: [.86, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.05, 1.3, .12], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.18, .075, -.2] })], [.72, at(.8)]],
     hits: [{ t: [.24, .42], part: 'shoulderL', dmg: 8, zone: 'body', knock: 1.5 }] },
   taunt: { name: 'Ejek', cost: 0, dur: 1.3, gain: 25, keys: [[0, S],
-    [.3, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 0, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10] })],
-    [.65, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 20, 0], hL: [.25, 1.6, .35], hR: [-.55, 1.25, .2], eL: [1, -1, 0], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10] })],
-    [.95, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, -10, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10] })], [1.3, S]],
+    [.3, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 0, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10], g: [0, 0] })],
+    [.65, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 20, 0], hL: [.25, 1.6, .35], hR: [-.55, 1.25, .2], eL: [1, -1, 0], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10], g: [.6, 0] })],
+    [.95, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, -10, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10], g: [0, 0] })], [1.3, S]],
     hits: [] }
 };
 
@@ -137,7 +139,7 @@ export const grabbing = f => f.move === 'headlock' && f.t >= MOVES.headlock.grab
 export const GUARD = P({ hips: [.88, 0, -25, 0], spine: [14, 0, 0], head: [12, 15, 0], hL: [.08, 1.6, .24], eL: [.5, -1, .1], hR: [-.08, 1.6, .22], eR: [-.5, -1, .1] });
 // The sparring partner: a loose stance, a reaction for each zone, and the
 // bent-over shape inside the headlock.
-const IDLE = P({ hips: [.93, 0, -15, 0], spine: [4, 0, 0], chest: [0, 5, 0], head: [3, 10, 0], hL: [.16, 1.3, .3], hR: [-.12, 1.32, .24] });
+const IDLE = P({ hips: [.93, 0, -15, 0], spine: [4, 0, 0], chest: [0, 5, 0], neck: [4, 0, 0], head: [3, 10, 0], hL: [.16, 1.3, .3], eL: [.65, -1, .1], hR: [-.12, 1.32, .24], eR: [-.65, -1, .1] });
 const Q = part => over(IDLE, part);
 export const PARTNER = {
   idle: IDLE,
