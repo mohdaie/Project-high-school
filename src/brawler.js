@@ -26,6 +26,8 @@ const GUARD_L = { hL: [.2, 1.44, .28] };
 
 // hit: window [from, to] in seconds, the striking part, damage, where it
 // lands (head, body, low) and knockback in metres.
+// near: the distance to the opponent a move is built to land from, when it
+// is not the usual one (a kick slides in close).
 export const MOVES = {
   jab: { name: 'Jab', cost: 6, dur: .3, chain: 'cross', chainAt: .16, keys: [[0, S],
     [.07, P({ hips: [.92, 0, -35, 0], chest: [0, -12, 0], head: [5, 47, 0], hL: [.06, 1.55, .9], eL: [1, -.3, 0] })],
@@ -52,18 +54,29 @@ export const MOVES = {
     [.36, P({ hips: [.92, 0, -15, 0], spine: [-18, 0, 0], fL: [.08, .85, .95], kL: [0, 1, .3], rL: [-50, 0], fR: [-.14, .075, -.3] })],
     [.5, P({ hips: [.9, 0, -20, 0], fL: [.1, .45, .35], kL: [0, 1, 1] })], [.66, S]],
     hits: [{ t: [.22, .36], part: 'footL', dmg: 8, zone: 'body', knock: 1 }] },
-  lowKick: { name: 'Low kick', cost: 10, dur: .6, keys: [[0, S],
-    [.14, at(.09, { hips: [.9, 0, 30, 0], chest: [0, 20, 0], head: [5, -50, 0], fR: [-.35, .35, .15], kR: [-1, .6, .5], rR: [30, 40], rL: [0, 40], hR: [-.3, 1.45, .12] })],
-    [.26, at(.18, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })],
-    [.34, at(.18, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })],
-    [.46, at(.18, { hips: [.9, 0, 25, 0], chest: [0, 15, 0], head: [5, -40, 0], fR: [-.28, .3, .18], kR: [-1, .6, .6], rR: [30, 30], rL: [0, 25], hR: [-.3, 1.45, .12] })], [.6, at(.18)]],
-    hits: [{ t: [.2, .34], part: 'footR', dmg: 7, zone: 'low', knock: .2 }] },
-  roundhouse: { name: 'Tendang hayun', cost: 16, dur: .82, keys: [[0, S],
-    [.16, at(.05, { hips: [.9, 0, 40, 0], chest: [0, 10, 0], head: [5, -50, 0], fR: [-.3, .7, .2], kR: [-1, 1, .5], rR: [30, 40], rL: [0, 60], hR: [-.38, 1.12, -.1], ...GUARD_L })],
-    [.3, at(.1, { hips: [.9, 0, 85, 0], spine: [-10, 0, -20], chest: [0, 0, 0], head: [10, -85, 10], fR: [.15, 1.45, .8], kR: [-.6, 1, .3], rR: [45, 90], rL: [0, 70], hR: [-.35, 1, -.35], eR: [-1, -1, 0], ...GUARD_L })],
-    [.38, at(.1, { hips: [.9, 0, 95, 0], spine: [-10, 0, -20], chest: [0, 0, 0], head: [10, -90, 10], fR: [.35, 1.35, .6], kR: [-.6, 1, .3], rR: [45, 100], rL: [0, 75], hR: [-.35, 1, -.35], eR: [-1, -1, 0], ...GUARD_L })],
-    [.52, at(.1, { hips: [.9, 0, 50, 0], chest: [0, 10, 0], head: [5, -60, 0], fR: [-.22, .62, .3], kR: [-.6, 1, .8], rR: [30, 40], rL: [0, 55], hR: [-.35, 1.36, .16], ...GUARD_L })], [.82, at(.1)]],
-    hits: [{ t: [.25, .4], part: 'footR', dmg: 13, zone: 'head', knock: .9, heavy: true }] },
+  // Muay Thai low kick to the lead thigh: step out at 45 degrees and sit,
+  // then pivot up on the ball of the lead foot and swing the rear shin through
+  // the thigh, hips and shoulders turning over, the rear arm thrown down and
+  // back against the turn, the lead hand on the chin.
+  lowKick: { name: 'Low kick', cost: 10, dur: .6, near: .9, keys: [[0, S],
+    [.09, at(.06, { hips: [.84, 0, -55, 0], spine: [14, 0, 0], fL: [.24, .075, .44], rL: [0, 35], kL: [.3, 0, 1], fR: [-.2, .1, -.28], rR: [35, -30], hR: [-.3, 1.3, -.05] })],
+    [.19, at(.12, { hips: [.88, 0, 50, -8], spine: [-6, 0, -6], chest: [0, 10, 0], head: [8, -45, 0], fL: [.24, .085, .44], rL: [20, 100], kL: [.3, 0, 1], fR: [-.2, .6, .72], kR: [-.5, .5, 1], rR: [20, 60], hL: [.15, 1.42, .32], hR: [-.4, 1, -.35], eR: [-1, -.4, -.3] }), 'in'],
+    [.27, at(.13, { hips: [.88, 0, 85, -10], spine: [-10, 0, -8], chest: [0, 5, 0], head: [8, -70, 0], fL: [.24, .085, .44], rL: [25, 125], kL: [.3, 0, 1], fR: [.28, .6, .68], kR: [.3, .6, 1], rR: [20, 95], hL: [.15, 1.42, .32], hR: [-.45, .95, -.4], eR: [-1, -.3, -.3] })],
+    [.42, at(.12, { hips: [.86, 0, 15, 0], spine: [6, 0, 0], head: [8, -15, 0], fL: [.2, .075, .4], rL: [10, 30], fR: [-.2, .2, -.1], kR: [-.4, .3, 1], rR: [20, 0], hR: [-.33, 1.26, -.03] })], [.6, at(.12), 'out']],
+    hits: [{ t: [.15, .29], part: 'footR', dmg: 8, zone: 'low', knock: .35 }] },
+  // Taekwondo roundhouse to the head (dollyo chagi), after the references:
+  // load on the lead foot, chamber the rear knee high, then pivot up on the
+  // ball of the lead foot (heel to the target, about 130 degrees of hip turn)
+  // and snap the straight leg through at head height, body leaning away, the
+  // kicking-side arm thrown back, the lead hand guarding the face. Recoil the
+  // knee and land. It slides in: thrown from close range.
+  roundhouse: { name: 'Tendang hayun', cost: 16, dur: .78, near: .66, keys: [[0, S],
+    [.1, at(.04, { hips: [.86, 0, -20, 0], spine: [12, 0, 0], fR: [-.2, .1, -.22], rR: [30, -20], rL: [5, 10], kL: [.2, 0, 1], hR: [-.29, 1.41, .07], ...GUARD_L })],
+    [.2, at(.14, { hips: [.92, 0, 45, -10], spine: [0, 0, 0], chest: [0, 5, 0], head: [10, -40, 0], fL: [.12, .09, .3], rL: [20, 70], kL: [.3, 0, 1], fR: [-.15, .85, .3], kR: [-.3, 1, .8], rR: [40, 30], hR: [-.35, 1.2, -.1], eR: [-1, -.8, 0], ...GUARD_L })],
+    [.3, at(.25, { hips: [.98, 0, 100, -38], spine: [-10, 0, -5], chest: [0, -10, 0], neck: [0, -10, 0], head: [15, -70, 15], fL: [.12, .09, .3], rL: [25, 130], kL: [.3, 0, 1], fR: [0, 1.95, .72], kR: [1, .4, 0], rR: [0, 90], hL: [.1, 1.45, .35], hR: [-.5, 1.2, -.4], eR: [-1, -.5, 0] }), 'in'],
+    [.38, at(.27, { hips: [.97, 0, 120, -35], spine: [-10, 0, -5], chest: [0, -10, 0], neck: [0, -10, 0], head: [10, -90, 10], fL: [.12, .09, .3], rL: [25, 140], kL: [.3, 0, 1], fR: [.3, 1.8, .6], kR: [1, .4, 0], rR: [0, 110], hL: [.1, 1.45, .35], hR: [-.5, 1.15, -.45], eR: [-1, -.5, 0] })],
+    [.5, at(.27, { hips: [.92, 0, 70, -10], chest: [0, 0, 0], head: [5, -55, 0], fL: [.12, .08, .3], rL: [15, 90], kL: [.3, 0, 1], fR: [-.05, .8, .2], kR: [.3, 1, .5], rR: [40, 60], hR: [-.3, 1.25, -.1], eR: [-1, -.8, 0], ...GUARD_L })], [.78, at(.27), 'out']],
+    hits: [{ t: [.26, .4], part: 'footR', dmg: 13, zone: 'head', knock: .9, heavy: true }] },
   knee: { name: 'Lutut', cost: 10, dur: .56, keys: [[0, S],
     [.12, P({ hL: [.12, 1.5, .7], hR: [-.1, 1.5, .7], eL: [.5, -1, 0], eR: [-.5, -1, 0] })],
     [.24, at(.27, { hips: [.95, 0, 0, 0], spine: [-10, 0, 0], chest: [0, 0, 0], head: [5, 0, 0], hL: [.1, 1.3, .55], hR: [-.1, 1.3, .55], eL: [.5, -1, 0], eR: [-.5, -1, 0], fR: [-.08, .75, .25], kR: [0, .6, 1], rR: [40, 0] })],

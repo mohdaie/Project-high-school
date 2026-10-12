@@ -96,7 +96,7 @@ const IDEAL = .85, ASSIST = .9;
 function begin(key) {
   me.fwd = 0; pop(MOVES[key].name); me.assist = 0;
   const h = MOVES[key].hits.find(h => !h.auto); if (!h) return;
-  const ideal = IDEAL + sample(MOVES[key].keys, h.t[0]).fwd[0], gap = me.pos.distanceTo(foe.pos) - ideal;
+  const ideal = (MOVES[key].near ?? IDEAL) + sample(MOVES[key].keys, h.t[0]).fwd[0], gap = me.pos.distanceTo(foe.pos) - ideal;
   if (gap > 0 && gap < ASSIST) { me.assist = gap / h.t[0]; me.assistUntil = h.t[0]; }
 }
 // Stick or keys as one analogue input; keys walk, Shift runs.
@@ -120,6 +120,47 @@ function floatText(text, at, cls) {
   el.style.left = `${(v3.x * .5 + .5) * innerWidth}px`; el.style.top = `${(-v3.y * .5 + .5) * innerHeight}px`; $('hud').append(el); setTimeout(() => el.remove(), 800);
 }
 
+// ---- intensity: a swoosh swept by a kicking leg or a heavy fist, a burst
+// where a blow lands, and a quick camera punch on heavy hits.
+const v4 = new T.Vector3(), v5 = new T.Vector3(), vS = new T.Vector3();
+// Tip and base of the striking limb as drawn: the worn model's bones, or the mannequin's.
+function limb(part, tip, base) {
+  const s = part.at(-1), foot = part.startsWith('foot'), skin = skins[shown], at = (o, v) => o.getWorldPosition(v);
+  if (skin) { if (foot) { at(skin.bone('toe' + s), tip); at(skin.bone('shin' + s), base).lerp(at(skin.bone('foot' + s), vS), .4); } else { at(skin.bone('hand' + s), tip).lerp(at(skin.bone('f_middle01' + s) ?? skin.bone('hand' + s), vS), .5); at(skin.bone('forearm' + s), base).lerp(at(skin.bone('hand' + s), vS), .45); } }
+  else { me.m.point(part, tip); at(me.m.j[(foot ? 'knee' : 'elbow') + s], base).lerp(at(me.m.j[(foot ? 'ankle' : 'hand') + s], vS), .45); }
+  return tip;
+}
+const TRAIL = 16, tPos = new Float32Array(TRAIL * 6), tCol = new Float32Array(TRAIL * 8), tGeo = new T.BufferGeometry(), trail = [];
+tGeo.setAttribute('position', new T.BufferAttribute(tPos, 3)); tGeo.setAttribute('color', new T.BufferAttribute(tCol, 4));
+tGeo.setIndex(Array.from({ length: TRAIL - 1 }, (_, i) => [i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2]).flat());
+const swoosh = new T.Mesh(tGeo, new T.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: T.DoubleSide, blending: T.AdditiveBlending }));
+swoosh.frustumCulled = false; scene.add(swoosh);
+// While a kick or heavy blow swings in, the limb leaves a band behind it that fades from the newest edge.
+const swings = h => !h.auto && (h.part.startsWith('foot') || h.heavy);
+function sweep() {
+  const m = me.f.move && MOVES[me.f.move], h = m?.hits.find(swings);
+  if (h && me.f.t > h.t[0] - .12 && me.f.t < h.t[1]) { const tip = new T.Vector3(), base = new T.Vector3(); limb(h.part, tip, base); trail.unshift([tip, base]); if (trail.length > TRAIL) trail.pop(); }
+  else if (trail.length) trail.pop();
+  for (let i = 0; i < TRAIL; i++) {
+    const [tip, base] = trail[Math.min(i, trail.length - 1)] ?? [v4.set(0, -9, 0), v5.set(0, -9, 0)], a = trail.length > 1 ? Math.max(0, 1 - i / (trail.length - 1)) : 0;
+    tip.toArray(tPos, i * 6); base.toArray(tPos, i * 6 + 3);
+    tCol.set([1, .93, .75, .75 * a * a, 1, .8, .45, .15 * a], i * 8);
+  }
+  tGeo.attributes.position.needsUpdate = tGeo.attributes.color.needsUpdate = true; tGeo.computeBoundingSphere();
+}
+const ringGeo = new T.RingGeometry(.05, .07, 40), sparkGeo = new T.PlaneGeometry(.016, .1).translate(0, .11, 0), bursts = [];
+function burst(at, heavy) {
+  const g = new T.Group(), mat = new T.MeshBasicMaterial({ color: 0xfff0c8, transparent: true, depthWrite: false, depthTest: false, blending: T.AdditiveBlending });
+  g.add(new T.Mesh(ringGeo, mat)); for (let i = 0; i < (heavy ? 10 : 7); i++) { const k = new T.Mesh(sparkGeo, mat); k.rotation.z = i / (heavy ? 10 : 7) * Math.PI * 2 + Math.random() * .4; g.add(k); }
+  g.position.copy(at); g.renderOrder = 10; scene.add(g); bursts.push({ g, mat, t: 0, k: heavy ? 1.35 : .9 });
+}
+let punch = 0, baseFov = 42;
+function effects(dt) {
+  for (const b of bursts) { b.t += dt; const u = b.t / .26; b.g.scale.setScalar(b.k * (.7 + .9 * Math.sqrt(u))); b.mat.opacity = Math.max(0, 1 - u); b.g.quaternion.copy(camera.quaternion); }
+  for (let i = bursts.length - 1; i >= 0; i--) if (bursts[i].t > .26) { scene.remove(bursts[i].g); bursts[i].mat.dispose(); bursts.splice(i, 1); }
+  punch = Math.max(0, punch - dt * 5); camera.fov = baseFov * (1 - .07 * punch * punch); camera.updateProjectionMatrix();
+}
+
 // ---- hits
 const SLACK = .07, done = new Set(), TARGETS = [['head', .17, 'head'], ['chest', .22, 'body'], ['hips', .2, 'body'], ['kneeL', .15, 'low'], ['kneeR', .15, 'low']];
 let stop = 0, shake = 0;
@@ -131,6 +172,8 @@ function checkHits(d) {
     if (h.auto) zone = foe.hold > .5 ? h.zone : null;
     else { me.m.point(h.part, pt); for (const [name, r, z] of TARGETS) if (pt.distanceTo(foe.m.point(name, tp)) < r + SLACK) { zone = z; break; } }
     if (!zone) continue;
+    if (h.auto) foe.m.point('head', tp);
+    burst(h.auto ? tp : limb(h.part, new T.Vector3(), new T.Vector3()).lerp(tp, .5), h.heavy); if (h.heavy) punch = 1;
     done.add(id); foe.hp = Math.max(0, foe.hp - h.dmg); foe.react = PARTNER[zone]; foe.rw = 1; foe.flash = 1;
     foe.knock.addScaledVector(d, h.knock * 4); stop = h.heavy ? .12 : .05; shake = h.heavy ? .12 : .04; thump(h.heavy || h.dmg >= 9);
     combo = now - comboAt < 1.1 ? combo + 1 : 1; comboAt = now;
@@ -229,6 +272,7 @@ function step(dt) {
   // Apply
   me.m.root.position.copy(me.pos); me.m.root.rotation.y = me.yaw; me.m.pose(p);
   const skin = skins[shown]; if (skin) { skin.update(); skin.grip?.(p.g); skin.breathe?.(me.air); skin.a?.face?.update(dt, false); }
+  scene.updateMatrixWorld(); sweep();
   foe.m.root.position.copy(foe.pos); foe.m.root.rotation.y = foe.yaw; foe.m.pose(q); foe.m.flash(foe.flash * .5);
   // Camera: side on, Jai left, pulled back as they separate.
   const mid = v3.addVectors(me.pos, foe.pos).multiplyScalar(.5);
@@ -245,14 +289,16 @@ function step(dt) {
   if (popTimer > 0 && (popTimer -= dt) <= 0) $('pop').textContent = '';
   if (now - comboAt > 1.1) $('combo').hidden = true;
 }
-function resize() { inkViewport.set(innerWidth, innerHeight); renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 1 ? 62 : 42; camera.updateProjectionMatrix(); }
+function resize() { inkViewport.set(innerWidth, innerHeight); renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.fov = baseFov = camera.aspect < 1 ? 62 : 42; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 let last = performance.now(); const debug = { paused: false };
+// One frame of play: a hit freezes the action briefly (hitstop) while its effects run on.
+function frame(dt) { if (stop > 0) stop -= dt; else step(dt); effects(dt); }
 renderer.setAnimationLoop(() => {
   const t = performance.now(), dt = Math.min((t - last) / 1000, .05); last = t;
-  if (debug.paused) {} else if (stop > 0) stop -= dt; else step(dt);
+  if (!debug.paused) frame(dt);
   renderer.render(scene, camera);
 });
 step(0); $('loading').hidden = true;
 // For automated checks: run frames and press buttons without a real clock.
-window.brawler = { get amir() { return skins.amir; }, skins, useSkin, useAmir, act, step, me, foe, debug, input, dur: () => me.f.move ? MOVES[me.f.move].dur : 0, reach: (part, foeName) => me.m.point(part, pt).distanceTo(foe.m.point(foeName, tp)), TARGETS, set stick(v) { stick.x = v[0]; stick.y = v[1]; } };
+window.brawler = { get amir() { return skins.amir; }, skins, useSkin, useAmir, act, step, frame, me, foe, debug, input, dur: () => me.f.move ? MOVES[me.f.move].dur : 0, reach: (part, foeName) => me.m.point(part, pt).distanceTo(foe.m.point(foeName, tp)), TARGETS, set stick(v) { stick.x = v[0]; stick.y = v[1]; } };
