@@ -2,7 +2,7 @@
 
 Game lawan 1 lawan 1 untuk telefon. Watak remaja bertarung di satu gelanggang guna silat, boxing, MMA dan capoeira. Lawan komputer dulu.
 
-## Status: v0.6.0, Amir pejuang jalanan
+## Status: v0.6.1, Amir pejuang jalanan
 
 `index.html` ialah gelanggang latihan. **Jai**, budak gaduh jalanan tanpa disiplin tertentu, lawan kawan latih yang cuma terima pukulan. Jai memakai model Amir yang dikemaskan dalam Blender (tanpa beg, badan tegap, jari bersendi); kawan latih masih mannequin bersendi.
 
@@ -38,7 +38,7 @@ Pukulan yang kena beri hitstop, gegar kamera, bunyi dan nombor damage. Pukulan b
 
 - **Tanpa beg.** Imbasan TRELLIS tiada baju di bawah beg (beg itulah belakang badan), jadi baju imbasan, tali beg dan beg dibuang. Kepala, rambut, muka, leher, logo dada, seluar dan kasut kekal seperti asal.
 - **Badan pejuang.** Badan baju baru dibina daripada gelang superelips: dada dan bahu lebar, belakang rata, perut leper. Lengan baju bulat dengan jalur biru gelap dan kolar biru gelap baru. Bahu (dan seluruh lengan) dianjak 2.6 cm ke luar; lengan atas, lengan bawah dan leher lebih tebal. Logo dada asal dipindah sebagai decal atas dada baru.
-- **Jari bersendi.** Setiap tangan ada tapak, empat jari dan ibu jari, masing-masing tiga ruas pada tulang jari rig mocap (`thumb01..03`, `f_index01..03`, `f_middle`, `f_ring`, `f_pinky`). Gelang sendi dikongsi separuh-separuh antara dua tulang, ruas lain tegar. Balutan pergelangan ikut lengan bawah dan tangan.
+- **Jari bersendi.** Setiap tangan ada tapak, empat jari dan ibu jari, masing-masing tiga ruas pada tulang jari rig mocap (`thumb01..03`, `f_index01..03`, `f_middle`, `f_ring`, `f_pinky`). Gelang sendi dikongsi separuh-separuh antara dua tulang, ruas lain tegar. Tangan dibesarkan 1.45 kali dari pergelangan supaya penumbuk nampak tebal dan jelas di skrin telefon. Balutan pergelangan ikut lengan bawah dan tangan.
 
 Eksport sekitar 705 KiB, 10,218 segi tiga, 52 tulang dan satu tekstur 1024² (jalur palet 32 px untuk kulit, balutan, baju dan biru gelap).
 

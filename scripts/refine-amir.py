@@ -56,7 +56,7 @@ removed|=collar&(head<.5)&(P[:,1]<1.058)&(~((colour[:,0]>colour[:,1]+.04)&(colou
 removed|=(head<.5)&(arm<.3)&(P[:,1]>.55)&(P[:,2]<-.12)
 centre=P[I].mean(axis=1); logo=I[(np.abs(centre[:,0])<.065)&(centre[:,1]>.81)&(centre[:,1]<.93)&(centre[:,2]>.1)]
 # Fighter's build: the arms move out with the broader shoulders, the neck thickens.
-SHIFT=.026
+SHIFT=.026; HAND=1.45
 for side,sign in [('L',1),('R',-1)]:
  for n in ['upper_arm','forearm','hand','handTip']: J[n+side][0]+=sign*SHIFT
 neck=(head<.5)*curve(P[:,1],[(.97,0),(1.,.16),(1.035,.16),(1.05,0)])*(ring<.11)
@@ -175,6 +175,7 @@ for side in ['L','R']:
  if thumb[2]<0: thumb=-thumb
  at=lambda f,t=0,q=0: wrist+F*f+thumb*t+palm*q
  hand=bone_weights(**{'hand'+side:1}); half=bone_weights(**{'hand'+side:.5,'forearm'+side:.5})
+ start=len(P)
  # Palm: wrist to knuckles, wider and flatter toward the knuckles.
  add(*loft([(at(f,0,q),thumb,palm,w,h,wt) for f,q,w,h,wt in [(-.004,0,.027,.021,half),(.016,0,.032,.018,hand),(.036,-.001,.035,.017,hand),(.05,-.003,.034,.014,hand)]],10),col=0)
  # Fingers: three phalanges each; a joint ring is shared half and half by
@@ -192,6 +193,9 @@ for side in ['L','R']:
  segs=[.024,.017,.014]; J[bones[1]]=base; J[bones[2]]=base+d*segs[0]; J[bones[3]]=base+d*(segs[0]+segs[1]); J['thumbTip'+side]=base+d*sum(segs)
  rings=[(base+d*s,u,v,r,r*.9,bone_weights(**wt)) for s,wt,r in [(-.006,{bones[0]:1},.013),(.004,{bones[0]:.5,bones[1]:.5},.0135),(segs[0]*.6,{bones[1]:1},.0125),(segs[0],{bones[1]:.5,bones[2]:.5},.0108),(segs[0]+segs[1]*.5,{bones[2]:1},.0105),(segs[0]+segs[1],{bones[2]:.5,bones[3]:.5},.01),(sum(segs)-.006,{bones[3]:1},.0094)]]
  add(*loft(rings,8))
+ # Chunky fists for a chibi fighter: the whole hand, finger joints included, grows about the wrist.
+ P[start:]=wrist+(P[start:]-wrist)*HAND
+ for n in [f+k+side for f in FINGERS for k in ['01','02','03','Tip'] if f+k+side in J]: J[n]=wrist+(J[n]-wrist)*HAND
  # Wrist wrap: a short band shared by forearm and hand.
  wristband=bone_weights(**{'hand'+side:.4,'forearm'+side:.6}); u,v=frame(F); add(*loft([(at(f),u,v,r,r*1.1,wristband) for f,r in [(-.026,.0305),(-.018,.0322),(-.006,.0322),(.002,.0305)]],12),col=1)
 mesh=bpy.data.meshes.new('Amir solid fighter mesh');mesh.from_pydata([world(v) for v in P],[],I.tolist());mesh.update()
