@@ -12,6 +12,23 @@ j.buffers[0].uri = 'data:application/octet-stream;base64,' + b.subarray(28 + n).
 const gltf = await new GLTFLoader().parseAsync(JSON.stringify(j), ''), scene = new T.Scene(), f = createFighter(scene, gltf), m = createMannequin(scene);
 const g = f.figure.geometry, count = g.attributes.position.count, index = g.index.array, v = new T.Vector3(), w = o => o.getWorldPosition(new T.Vector3());
 const skinned = () => { scene.updateMatrixWorld(true); f.figure.skeleton.update(); const out = new Float32Array(count * 3); for (let i = 0; i < count; i++) f.figure.getVertexPosition(i, v).applyMatrix4(f.figure.matrixWorld).toArray(out, i * 3); return out; };
+// Fists against the body: the deepest a fist vertex sits under the nearest surface of the
+// body (anything but its own arm), from the posed mesh's own normals.
+const bones = f.figure.skeleton.bones.map(o => o.name.slice(4)), sk = g.attributes.skinIndex, sw = g.attributes.skinWeight;
+const own = Array.from({ length: count }, (_, i) => { let best = 0, k0 = 0; for (let k = 0; k < 4; k++) if (sw.getComponent(i, k) > best) { best = sw.getComponent(i, k); k0 = sk.getComponent(i, k); } return bones[k0]; });
+const digit = (n, s) => n === 'hand' + s || ((n.startsWith('f_') || n.startsWith('thumb')) && n.endsWith(s));
+const fistIds = s => own.flatMap((n, i) => digit(n, s) ? [i] : []), bodyIds = s => own.flatMap((n, i) => digit(n, s) || n === 'forearm' + s || n === 'upper_arm' + s ? [] : [i]);
+const FIST = { L: fistIds('L'), R: fistIds('R') }, BODY = { L: bodyIds('L'), R: bodyIds('R') };
+function sunk(p, s) {
+  const geo = new T.BufferGeometry(); geo.setAttribute('position', new T.BufferAttribute(p, 3)); geo.setIndex(g.index); geo.computeVertexNormals(); const nor = geo.attributes.normal.array;
+  const c = [0, 1, 2].map(k => FIST[s].reduce((sum, i) => sum + p[i * 3 + k], 0) / FIST[s].length), near = BODY[s].filter(i => [0, 1, 2].every(k => Math.abs(p[i * 3 + k] - c[k]) < .2));
+  let depth = 0;
+  for (const i of FIST[s]) {
+    let bd = .0025, bi = -1; for (const k of near) { const d = (p[i * 3] - p[k * 3]) ** 2 + (p[i * 3 + 1] - p[k * 3 + 1]) ** 2 + (p[i * 3 + 2] - p[k * 3 + 2]) ** 2; if (d < bd) { bd = d; bi = k; } }
+    if (bi >= 0) depth = Math.max(depth, -[0, 1, 2].reduce((sum, k) => sum + (p[i * 3 + k] - p[bi * 3 + k]) * nor[bi * 3 + k], 0));
+  }
+  return depth;
+}
 const edge = (p, a, c) => Math.hypot(p[a * 3] - p[c * 3], p[a * 3 + 1] - p[c * 3 + 1], p[a * 3 + 2] - p[c * 3 + 2]);
 // Breathing in the bind pose: the front of the ribcage moves out, the back barely.
 f.grip([0, 0]); f.breathe(-1); const out = skinned(); f.breathe(1); const inn = skinned(); f.breathe(0); const rest = skinned();
@@ -21,11 +38,15 @@ assert.ok(front > .012 && front < .05, `chest rises ${front}`); assert.ok(back <
 let lo = Infinity, hi = -Infinity; for (let i = 1; i < rest.length; i += 3) { lo = Math.min(lo, rest[i]); hi = Math.max(hi, rest[i]); }
 assert.ok(Math.abs(lo) < .01 && Math.abs(hi - 1.75) < .01, `height ${lo}..${hi}`);
 const update = retarget(f, m, 1), digits = ['index', 'middle', 'ring', 'pinky'];
-const poses = [['stance', STANCE], ['guard', GUARD]];
-for (const [name, move] of Object.entries(MOVES)) for (let i = 0; i <= 12; i++) poses.push([name + i, sample(move.keys, move.dur * i / 12)]);
-let worst = 0;
-for (const [name, pose] of poses) {
+// Held poses and every key, then frames between them.
+const poses = [['stance', STANCE, true], ['guard', GUARD, true]];
+for (const [name, move] of Object.entries(MOVES)) { for (const [t, p] of move.keys) poses.push([name + '@' + t, p, true]); for (let i = 0; i <= 12; i++) poses.push([name + i, sample(move.keys, move.dur * i / 12), false]); }
+let worst = 0, deepKey = 0, deep = 0;
+for (const [name, pose, key] of poses) {
   m.pose(pose); update(); f.grip(pose.g); const p = skinned();
+  // Fists rest against the face or body but never sink into it: none at a key, at most
+  // a brief brush (skin and cloth) while the body turns between keys.
+  for (const s of ['L', 'R']) { const d = sunk(p, s); if (key) { deepKey = Math.max(deepKey, d); assert.ok(d < .006, `${name} ${s} fist ${d} m inside the body`); } else { deep = Math.max(deep, d); assert.ok(d < .02, `${name} ${s} fist ${d} m inside the body`); } }
   for (let i = 0; i < p.length; i += 3) { assert.ok(Number.isFinite(p[i]) && Number.isFinite(p[i + 1]) && Number.isFinite(p[i + 2]), name); assert.ok(Math.abs(p[i]) < 3 && Math.abs(p[i + 2]) < 3 && p[i + 1] > -.1 && p[i + 1] < 2.3, name); }
   // No skin tears: every edge stays within a sane stretch of its rest length
   // (the most is the groin in the head kick and the point of a tightly bent elbow).
@@ -40,4 +61,7 @@ for (const [name, pose] of poses) {
   }
 }
 assert.ok(worst < 3.2, `skin stretched ${worst}x`);
-console.log(`Validated ${poses.length} fighting poses (stretch ${worst.toFixed(2)}x, breath ${(front * 100).toFixed(1)} cm)`);
+// The rear fist rests beside the jaw, as in the reference photo, in plain sight.
+m.pose(STANCE); update(); f.grip(STANCE.g); { const p = skinned(), jaw = w(f.bone('head')), c = [0, 1, 2].map(k => FIST.R.reduce((sum, i) => sum + p[i * 3 + k], 0) / FIST.R.length);
+  const d = Math.hypot(c[0] - jaw.x, c[2] - jaw.z); assert.ok(d > .1 && d < .2 && c[1] > jaw.y - .12 && c[1] < jaw.y + .05, `rear fist ${c} vs jaw ${jaw.toArray()}`); }
+console.log(`Validated ${poses.length} fighting poses (stretch ${worst.toFixed(2)}x, fists in ${(deepKey * 100).toFixed(1)}/${(deep * 100).toFixed(1)} cm, breath ${(front * 100).toFixed(1)} cm)`);
