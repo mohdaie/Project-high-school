@@ -90,11 +90,11 @@ test('the kicks follow the references: pivot, hips turned over, slide in, snap t
   const impact = (m, t) => m.keys.find(k => k[0] === t);
   // Taekwondo roundhouse to the head: about 130 degrees of hip turn, the
   // standing foot pivoted heel-to-target and up on its ball, body leaning
-  // away, rear arm thrown back, snapping into the kick, from close range.
+  // away, rear arm swung down, snapping into the kick, from close range.
   const rh = MOVES.roundhouse, [, p, e] = impact(rh, .3);
   assert.equal(e, 'in'); assert.ok(p.hips[2] - STANCE.hips[2] >= 130 && p.hips[3] < -20, 'hips turned over');
   assert.ok(p.rL[1] >= 120 && p.rL[0] > 0 && p.hips[0] > STANCE.hips[0], 'up on the ball of the pivoted foot');
-  assert.ok(p.fR[1] > 1.7 && p.hR[2] < -.3, 'leg at head height, rear arm thrown back');
+  assert.ok(p.fR[1] > 1.7 && p.hR[1] < 1.15, 'leg at head height, rear arm swung down along the kicking side');
   assert.ok(rh.near < .85 && rh.hits[0].t[0] < .3 && rh.hits[0].t[1] > .3);
   // Muay Thai low kick: step out, pivot, swing the shin through the thigh
   // with the rear arm thrown down and back, snapping in.
