@@ -5,8 +5,9 @@ import { sample, mix } from './keyframes.js';
 import { newBreath, breathe } from './breath.js';
 import { loadRig, loadModel, createActor, MODELS } from './actor.js';
 import { retarget } from './retarget.js';
+import { createFighter } from './fighter.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { STANCE, GUARD, PARTNER, MOVES, newFighter, press, tick, activeHits, grabbing } from './brawler.js?v=0.5.3';
+import { STANCE, GUARD, PARTNER, MOVES, newFighter, press, tick, activeHits, grabbing } from './brawler.js?v=0.6.0';
 
 // Training ring: Jai against a sparring partner who takes the hits.
 // Camera from the side, Jai on the left. Stick: right = toward the partner,
@@ -28,19 +29,29 @@ const outer = new T.Mesh(new T.CircleGeometry(30, 32), new T.MeshLambertMaterial
 const me = { m: createMannequin(scene, { body: 0xd9a36c, joint: 0x5b3a28, band: 0xd8322a }), f: newFighter({ tireless: true }), pos: new T.Vector3(-.6, 0, 0), yaw: 0, vel: new T.Vector3(), phase: 0, fwd: 0, seq: 0, breath: newBreath() };
 const foe = { m: createMannequin(scene, { body: 0x8fa3b8, joint: 0x3e4a5c }), pos: new T.Vector3(.6, 0, 0), yaw: 0, hp: 100, react: PARTNER.idle, rw: 0, knock: new T.Vector3(), hold: 0, down: -1, flash: 0, breath: newBreath() };
 
-// Amir's skinned model (from Malaysian-retro-game) worn over Jai's
-// mannequin, which keeps posing unseen and drives his bones. Scaled from a
-// 1.5 m child toward the mannequin's 1.75 m so the reach matches.
-const AMIR_SCALE = 1.17;
-let amir = null, showAmir = false, wantAmir = true;
-function useAmir(on) { wantAmir = on; showAmir = on && !!amir; me.m.root.visible = !showAmir; if (amir) amir.a.group.visible = showAmir; $('modelBtn').textContent = showAmir ? 'Watak: Amir' : 'Watak: mannequin'; }
+// Skinned models worn over Jai's mannequin, which keeps posing unseen and
+// drives their bones: Jai's own rig from Blender (fingers that close into
+// fists, ribs that breathe) and Amir's model from Malaysian-retro-game,
+// scaled from a 1.5 m child toward the mannequin's 1.75 m so the reach matches.
+const AMIR_SCALE = 1.17, SKINS = ['jai', 'amir', 'mannequin'], LABEL = { jai: 'Jai', amir: 'Amir', mannequin: 'mannequin' };
+const skins = {};
+let wantSkin = 'jai', shown = 'mannequin';
+function useSkin(k) {
+  wantSkin = k; shown = skins[k] ? k : 'mannequin'; me.m.root.visible = shown === 'mannequin';
+  for (const [n, sk] of Object.entries(skins)) sk.group.visible = n === shown;
+  $('modelBtn').textContent = 'Watak: ' + LABEL[shown];
+}
+const useAmir = on => useSkin(on ? 'amir' : 'mannequin');
 // Hosts that cannot serve .glb get each model as base64 text beside it
 // (window.GLB_TXT set by the page).
 const glbText = window.GLB_TXT ? url => fetch(url.replace(/(\?|$)/, '.txt$1')).then(r => r.text()).then(b => { const bin = atob(b.trim()), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new GLTFLoader().parseAsync(a.buffer, ''); }) : undefined;
-const fighterModel = new URL('../assets/models/amir-fighter.glb?v=0.5.2', import.meta.url).href;
+const fighterModel = new URL('../assets/models/amir-fighter.glb?v=0.5.2', import.meta.url).href, jaiModel = new URL('../assets/models/jai-fighter.glb?v=0.6.0', import.meta.url).href;
+(glbText || (url => new GLTFLoader().loadAsync(url)))(jaiModel).then(gltf => {
+  const f = createFighter(scene, gltf); skins.jai = { ...f, update: retarget(f, me.m, 1) }; useSkin(wantSkin);
+}).catch(e => console.warn('Jai unavailable', e));
 Promise.all([loadRig(undefined, glbText), loadModel(fighterModel, glbText).catch(() => loadModel(MODELS.amir, glbText))]).then(([rig, model]) => {
-  const a = createActor(scene, 0, 0, 'amir', rig, model); amir = { a, update: retarget(a, me.m, AMIR_SCALE) }; useAmir(wantAmir);
-}).catch(e => { console.warn('Amir unavailable', e); $('modelBtn').hidden = true; });
+  const a = createActor(scene, 0, 0, 'amir', rig, model); skins.amir = { a, group: a.group, bone: a.bone, update: retarget(a, me.m, AMIR_SCALE) }; useSkin(wantSkin);
+}).catch(e => console.warn('Amir unavailable', e));
 
 // ---- input: keyboard, a floating stick on the left, buttons on the right
 const keys = new Set(), stick = { id: null, x: 0, y: 0, ox: 0, oy: 0 };
@@ -56,7 +67,7 @@ for (const b of document.querySelectorAll('#pad button')) {
 }
 const base = $('stick'), knob = $('knob');
 $('tiredBtn').onclick = () => { me.f.tireless = !me.f.tireless; me.f.stamina = 100; $('tiredBtn').textContent = me.f.tireless ? 'Penat: tak' : 'Penat: ya'; $('stamWrap').hidden = me.f.tireless; };
-$('modelBtn').onclick = () => useAmir(!wantAmir);
+$('modelBtn').onclick = () => useSkin(SKINS[(SKINS.indexOf(shown) + 1) % SKINS.length]);
 $('listBtn').onclick = () => { const l = $('list'); l.hidden = !l.hidden; $('listBtn').setAttribute('aria-expanded', !l.hidden); };
 canvas.addEventListener('pointerdown', e => { if (stick.id !== null || e.clientX > innerWidth * .5) return; audio(); stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY; canvas.setPointerCapture(e.pointerId); base.hidden = false; base.style.transform = `translate(${e.clientX - 60}px,${e.clientY - 60}px)`; moveStick(e); });
 canvas.addEventListener('pointermove', e => { if (e.pointerId === stick.id) moveStick(e); });
@@ -85,7 +96,7 @@ const IDEAL = .85, ASSIST = .9;
 function begin(key) {
   me.fwd = 0; pop(MOVES[key].name); me.assist = 0;
   const h = MOVES[key].hits.find(h => !h.auto); if (!h) return;
-  const ideal = IDEAL + sample(MOVES[key].keys, h.t[0]).fwd[0], gap = me.pos.distanceTo(foe.pos) - ideal;
+  const ideal = (MOVES[key].near ?? IDEAL) + sample(MOVES[key].keys, h.t[0]).fwd[0], gap = me.pos.distanceTo(foe.pos) - ideal;
   if (gap > 0 && gap < ASSIST) { me.assist = gap / h.t[0]; me.assistUntil = h.t[0]; }
 }
 // Stick or keys as one analogue input; keys walk, Shift runs.
@@ -109,6 +120,47 @@ function floatText(text, at, cls) {
   el.style.left = `${(v3.x * .5 + .5) * innerWidth}px`; el.style.top = `${(-v3.y * .5 + .5) * innerHeight}px`; $('hud').append(el); setTimeout(() => el.remove(), 800);
 }
 
+// ---- intensity: a swoosh swept by a kicking leg or a heavy fist, a burst
+// where a blow lands, and a quick camera punch on heavy hits.
+const v4 = new T.Vector3(), v5 = new T.Vector3(), vS = new T.Vector3();
+// Tip and base of the striking limb as drawn: the worn model's bones, or the mannequin's.
+function limb(part, tip, base) {
+  const s = part.at(-1), foot = part.startsWith('foot'), skin = skins[shown], at = (o, v) => o.getWorldPosition(v);
+  if (skin) { if (foot) { at(skin.bone('toe' + s), tip); at(skin.bone('shin' + s), base).lerp(at(skin.bone('foot' + s), vS), .4); } else { at(skin.bone('hand' + s), tip).lerp(at(skin.bone('f_middle01' + s) ?? skin.bone('hand' + s), vS), .5); at(skin.bone('forearm' + s), base).lerp(at(skin.bone('hand' + s), vS), .45); } }
+  else { me.m.point(part, tip); at(me.m.j[(foot ? 'knee' : 'elbow') + s], base).lerp(at(me.m.j[(foot ? 'ankle' : 'hand') + s], vS), .45); }
+  return tip;
+}
+const TRAIL = 16, tPos = new Float32Array(TRAIL * 6), tCol = new Float32Array(TRAIL * 8), tGeo = new T.BufferGeometry(), trail = [];
+tGeo.setAttribute('position', new T.BufferAttribute(tPos, 3)); tGeo.setAttribute('color', new T.BufferAttribute(tCol, 4));
+tGeo.setIndex(Array.from({ length: TRAIL - 1 }, (_, i) => [i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2]).flat());
+const swoosh = new T.Mesh(tGeo, new T.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: T.DoubleSide, blending: T.AdditiveBlending }));
+swoosh.frustumCulled = false; scene.add(swoosh);
+// While a kick or heavy blow swings in, the limb leaves a band behind it that fades from the newest edge.
+const swings = h => !h.auto && (h.part.startsWith('foot') || h.heavy);
+function sweep() {
+  const m = me.f.move && MOVES[me.f.move], h = m?.hits.find(swings);
+  if (h && me.f.t > h.t[0] - .12 && me.f.t < h.t[1]) { const tip = new T.Vector3(), base = new T.Vector3(); limb(h.part, tip, base); trail.unshift([tip, base]); if (trail.length > TRAIL) trail.pop(); }
+  else if (trail.length) trail.pop();
+  for (let i = 0; i < TRAIL; i++) {
+    const [tip, base] = trail[Math.min(i, trail.length - 1)] ?? [v4.set(0, -9, 0), v5.set(0, -9, 0)], a = trail.length > 1 ? Math.max(0, 1 - i / (trail.length - 1)) : 0;
+    tip.toArray(tPos, i * 6); base.toArray(tPos, i * 6 + 3);
+    tCol.set([1, .93, .75, .75 * a * a, 1, .8, .45, .15 * a], i * 8);
+  }
+  tGeo.attributes.position.needsUpdate = tGeo.attributes.color.needsUpdate = true; tGeo.computeBoundingSphere();
+}
+const ringGeo = new T.RingGeometry(.05, .07, 40), sparkGeo = new T.PlaneGeometry(.016, .1).translate(0, .11, 0), bursts = [];
+function burst(at, heavy) {
+  const g = new T.Group(), mat = new T.MeshBasicMaterial({ color: 0xfff0c8, transparent: true, depthWrite: false, depthTest: false, blending: T.AdditiveBlending });
+  g.add(new T.Mesh(ringGeo, mat)); for (let i = 0; i < (heavy ? 10 : 7); i++) { const k = new T.Mesh(sparkGeo, mat); k.rotation.z = i / (heavy ? 10 : 7) * Math.PI * 2 + Math.random() * .4; g.add(k); }
+  g.position.copy(at); g.renderOrder = 10; scene.add(g); bursts.push({ g, mat, t: 0, k: heavy ? 1.35 : .9 });
+}
+let punch = 0, baseFov = 42;
+function effects(dt) {
+  for (const b of bursts) { b.t += dt; const u = b.t / .26; b.g.scale.setScalar(b.k * (.7 + .9 * Math.sqrt(u))); b.mat.opacity = Math.max(0, 1 - u); b.g.quaternion.copy(camera.quaternion); }
+  for (let i = bursts.length - 1; i >= 0; i--) if (bursts[i].t > .26) { scene.remove(bursts[i].g); bursts[i].mat.dispose(); bursts.splice(i, 1); }
+  punch = Math.max(0, punch - dt * 5); camera.fov = baseFov * (1 - .07 * punch * punch); camera.updateProjectionMatrix();
+}
+
 // ---- hits
 const SLACK = .07, done = new Set(), TARGETS = [['head', .17, 'head'], ['chest', .22, 'body'], ['hips', .2, 'body'], ['kneeL', .15, 'low'], ['kneeR', .15, 'low']];
 let stop = 0, shake = 0;
@@ -120,6 +172,8 @@ function checkHits(d) {
     if (h.auto) zone = foe.hold > .5 ? h.zone : null;
     else { me.m.point(h.part, pt); for (const [name, r, z] of TARGETS) if (pt.distanceTo(foe.m.point(name, tp)) < r + SLACK) { zone = z; break; } }
     if (!zone) continue;
+    if (h.auto) foe.m.point('head', tp);
+    burst(h.auto ? tp : limb(h.part, new T.Vector3(), new T.Vector3()).lerp(tp, .5), h.heavy); if (h.heavy) punch = 1;
     done.add(id); foe.hp = Math.max(0, foe.hp - h.dmg); foe.react = PARTNER[zone]; foe.rw = 1; foe.flash = 1;
     foe.knock.addScaledVector(d, h.knock * 4); stop = h.heavy ? .12 : .05; shake = h.heavy ? .12 : .04; thump(h.heavy || h.dmg >= 9);
     combo = now - comboAt < 1.1 ? combo + 1 : 1; comboAt = now;
@@ -186,7 +240,7 @@ function step(dt) {
   let p;
   if (me.f.move) { p = sample(MOVES[me.f.move].keys, me.f.t); const f = p.fwd[0]; me.pos.addScaledVector(d, Math.max(0, f - me.fwd)); me.fwd = f; if (me.assist && me.f.t <= me.assistUntil + dt) me.pos.addScaledVector(d, me.assist * dt); }
   else p = walk(mix(me.f.guard ? GUARD : STANCE, STANCE, 0), me.vel, dt);
-  breath(p, breathe(me.breath, dt, { moving: Math.min(1, me.vel.length() / SPEED.fwd), attacking: !!me.f.move && me.f.move !== 'taunt' }), me.m);
+  me.air = breathe(me.breath, dt, { moving: Math.min(1, me.vel.length() / SPEED.fwd), attacking: !!me.f.move && me.f.move !== 'taunt' }); breath(p, me.air, me.m);
   checkHits(d);
   // Partner
   const grab = grabbing(me.f); foe.hold = T.MathUtils.clamp(foe.hold + (grab ? dt * 6 : -dt * 4), 0, 1);
@@ -217,7 +271,8 @@ function step(dt) {
   }
   // Apply
   me.m.root.position.copy(me.pos); me.m.root.rotation.y = me.yaw; me.m.pose(p);
-  if (showAmir) { amir.update(); amir.a.face?.update(dt, false); }
+  const skin = skins[shown]; if (skin) { skin.update(); skin.grip?.(p.g); skin.breathe?.(me.air); skin.a?.face?.update(dt, false); }
+  scene.updateMatrixWorld(); sweep();
   foe.m.root.position.copy(foe.pos); foe.m.root.rotation.y = foe.yaw; foe.m.pose(q); foe.m.flash(foe.flash * .5);
   // Camera: side on, Jai left, pulled back as they separate.
   const mid = v3.addVectors(me.pos, foe.pos).multiplyScalar(.5);
@@ -227,21 +282,23 @@ function step(dt) {
   camera.lookAt(look);
   // Close-up views for checks (window.brawler.debug.cam = 'side' | 'front').
   if (debug.view) { const [a, b, h] = debug.view, c = me.pos.clone().setY(1.05); camera.position.copy(c).addScaledVector(d, a).addScaledVector(n, b).setY(h); camera.lookAt(c); }
-  else if (debug.zoom) { const h = amir.a.fists.L.localToWorld(new T.Vector3(0, .05, 0)); camera.position.copy(h).add(new T.Vector3(debug.zoom[0], .05, debug.zoom[1]).applyAxisAngle(T.Object3D.DEFAULT_UP, me.yaw).multiplyScalar(.45)); camera.lookAt(h); }
+  else if (debug.zoom && skin) { const h = skin.bone('handL').localToWorld(new T.Vector3(0, .05, 0)); camera.position.copy(h).add(new T.Vector3(debug.zoom[0], .05, debug.zoom[1]).applyAxisAngle(T.Object3D.DEFAULT_UP, me.yaw).multiplyScalar(.45)); camera.lookAt(h); }
   else if (debug.cam) { const c = me.pos.clone().setY(1.35); camera.position.copy(c).addScaledVector(debug.cam === 'side' ? n : d, 1.3).addScaledVector(debug.cam === 'side' ? d : n, debug.cam === 'side' ? .2 : 1.2); camera.lookAt(c.addScaledVector(d, .2)); }
   // HUD
   $('stam').style.width = `${me.f.stamina}%`; $('stam').classList.toggle('low', me.f.stamina < 20); $('hp').style.width = `${foe.hp}%`;
   if (popTimer > 0 && (popTimer -= dt) <= 0) $('pop').textContent = '';
   if (now - comboAt > 1.1) $('combo').hidden = true;
 }
-function resize() { inkViewport.set(innerWidth, innerHeight); renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 1 ? 62 : 42; camera.updateProjectionMatrix(); }
+function resize() { inkViewport.set(innerWidth, innerHeight); renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.fov = baseFov = camera.aspect < 1 ? 62 : 42; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 let last = performance.now(); const debug = { paused: false };
+// One frame of play: a hit freezes the action briefly (hitstop) while its effects run on.
+function frame(dt) { if (stop > 0) stop -= dt; else step(dt); effects(dt); }
 renderer.setAnimationLoop(() => {
   const t = performance.now(), dt = Math.min((t - last) / 1000, .05); last = t;
-  if (debug.paused) {} else if (stop > 0) stop -= dt; else step(dt);
+  if (!debug.paused) frame(dt);
   renderer.render(scene, camera);
 });
 step(0); $('loading').hidden = true;
 // For automated checks: run frames and press buttons without a real clock.
-window.brawler = { get amir() { return amir; }, useAmir, act, step, me, foe, debug, input, dur: () => me.f.move ? MOVES[me.f.move].dur : 0, reach: (part, foeName) => me.m.point(part, pt).distanceTo(foe.m.point(foeName, tp)), TARGETS, set stick(v) { stick.x = v[0]; stick.y = v[1]; } };
+window.brawler = { get amir() { return skins.amir; }, skins, useSkin, useAmir, act, step, frame, me, foe, debug, input, dur: () => me.f.move ? MOVES[me.f.move].dur : 0, reach: (part, foeName) => me.m.point(part, pt).distanceTo(foe.m.point(foeName, tp)), TARGETS, set stick(v) { stick.x = v[0]; stick.y = v[1]; } };

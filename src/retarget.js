@@ -26,9 +26,10 @@ export function retarget(actor, mannequin, scale = 1, { fists = true } = {}) {
   group.position.set(0, 0, 0); group.rotation.set(0, 0, 0); group.scale.setScalar(scale);
   figure.skeleton.pose(); group.updateMatrixWorld(true);
   if (fists && !actor.fighterReady) { sharpenJoints(actor); addFists(actor); }
+  // A hand lines up with its forearm, so a T-posed hand stays straight at the wrist.
   const down = new T.Vector3(0, -1, 0), bones = MAP.map(([b, n]) => {
-    const o = bone(b), bind = wq(o), child = LIMBS[b.slice(0, -1)];
-    const fix = child ? new T.Quaternion().setFromUnitVectors(down, w(bone(child + b.at(-1))).sub(w(o)).normalize()).invert() : new T.Quaternion();
+    const o = bone(b), bind = wq(o), k = b.slice(0, -1), s = b.at(-1), [from, to] = k === 'hand' ? [bone('forearm' + s), o] : [o, LIMBS[k] && bone(LIMBS[k] + s)];
+    const fix = to ? new T.Quaternion().setFromUnitVectors(down, w(to).sub(w(from)).normalize()).invert() : new T.Quaternion();
     return { o, n, base: fix.multiply(bind) };
   });
   const hips = bone('hips'), hipsRest = w(hips), ankleY = w(bone('footL')).y;

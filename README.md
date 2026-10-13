@@ -2,9 +2,9 @@
 
 Game lawan 1 lawan 1 untuk telefon. Watak remaja bertarung di satu gelanggang guna silat, boxing, MMA dan capoeira. Lawan komputer dulu.
 
-## Status: v0.5.3, kekuda ikut gambar rujukan
+## Status: v0.6.0, Jai dengan model dan rig Blender sendiri
 
-`index.html` ialah gelanggang latihan. **Jai**, budak gaduh jalanan tanpa disiplin tertentu, lawan kawan latih yang cuma terima pukulan. Jai memakai model Amir yang dikemaskan dalam Blender; kawan latih masih mannequin bersendi.
+`index.html` ialah gelanggang latihan. **Jai**, budak gaduh jalanan tanpa disiplin tertentu, lawan kawan latih yang cuma terima pukulan. Jai kini memakai modelnya sendiri: budak sekolah berbaju putih, tali leher hitam, seluar hitam dan kasut putih, dengan rangka penuh yang dipasang dalam Blender (sampai ke jari). Kawan latih masih mannequin bersendi.
 
 Empat butang macam pad PS5. Arah joystick (ke lawan atau undur) pilih variasi setiap butang.
 
@@ -26,15 +26,36 @@ Masa latihan stamina tak terhad, jadi boleh serang tanpa henti. Butang "Penat" d
 
 Bantuan jarak: kalau serangan dimula bila lawan sedikit jauh (sampai lebih kurang 0.6 m dari jarak ideal), Jai melangkah masuk sendiri sebelum pukulan sampai. Lebih jauh dari tu, pukulan tersasar.
 
-**Kekuda.** Kedua-dua penumbuk di sisi muka, siku terbuka sedikit dan menghala ke bawah, dagu direndahkan serta badan condong sedikit ke depan. Bahu kurang menyerong dan lengan belakang tidak lagi melintang di depan dada. Kaki kiri di depan dan tapak kekal lebar untuk imbangan. Setiap serangan kembali kepada kekuda ini.
+**Kekuda (v0.6.0, ikut gambar rujukan Jai).** Gaya jalanan: dada terbuka dan berpusing ke kanan atas kaki kiri yang di depan, kepala berpaling semula ke lawan dengan dagu direndahkan. Penumbuk kiri naik di depan muka, sikunya rapat ke bawah. Penumbuk kanan yang berbalut berehat betul-betul di sebelah rahang kanan (lebih kurang 1.6 cm dari muka, jelas kelihatan), lengan bawah tegak dan siku ke bawah dan ke luar. Kedua-dua tangan digenggam jadi penumbuk; masa Ejek tangan dibuka untuk panggil lawan. Setiap serangan kembali kepada kekuda ini.
+
+Sasaran tangan dalam kekuda, Tutup muka dan setiap gerak dipilih supaya penumbuk model Jai menyentuh muka dan badan tetapi tidak tenggelam ke dalamnya, pada setiap keyframe dan semasa badan berpusing antara keyframe. Tutup muka kini meletakkan kedua-dua penumbuk sebelah-menyebelah di depan muka (dulu ia masuk ke dalam kepala). `scripts/check-jai-rig.mjs` mengukur sedalam mana penumbuk masuk ke badan: 0 pada keyframe, paling banyak 1.3 cm sekejap antara keyframe.
 
 **Nafas.** Masa berdiri, dada Jai naik turun (lebih kurang sekali setiap 3 saat) dan badannya bergoyang sedikit macam peninju: berat badan beralih, kepala dan tangan bergerak, lutut lentur. Bila menyerang, dia tarik nafas dan tahan. Lepas serangan habis, nafas dihembus cepat, kemudian kembali ke rentak biasa. Makin banyak bergerak dan menyerang, makin laju dan dalam nafasnya, dan bila rehat ia reda semula. Kawan latih pun bernafas, dan lebih kuat selepas kena pukul. Logik nafas dalam `src/breath.js` (diuji dalam `tests/breath.test.js`).
 
-Pukulan yang kena beri hitstop, gegar kamera, bunyi dan nombor damage. Pukulan berturut-turut dalam 1.1 saat dikira combo. Bila HP kawan latih habis, dia jatuh (K.O.) dan bangun semula. Kamera dari sisi, sedikit di belakang Jai, supaya kedua-dua kaki nampak.
+Pada model Jai nafas nampak pada badan sendiri: tulang `ribs` (rusuk) dan `belly` (perut) dalam rig Blender. Bila tarik nafas, rusuk mengembang ke depan dan ke sisi (bahagian depan dada naik lebih kurang 3.5 cm antara hembus penuh dan tarik penuh) dan perut ditarik masuk sedikit; belakang badan hampir tak bergerak. Ini ditambah atas gerak postur nafas yang sedia ada (dada terangkat, bahu dan tangan naik).
+
+**Tendangan (v0.6.0, ikut rujukan).** Tendang hayun kini dollyo chagi Taekwondo ke kepala, berdasarkan gambar rujukan (tendangan tinggi Lethwei, wikiHow Taekwondo) dan kajian biomekanik Sayers 2017 (PLoS One): pinggul berpusing kira-kira 130°, lutut menyentap lurus. Urutannya: berat ke kaki depan, lutut kanan dilipat tinggi, kemudian berpusing atas bebola kaki depan (tumit ke arah lawan), kaki lurus menyentap ke kepala sambil badan condong menjauh, tangan kanan dihayun lurus ke bawah di sisi kaki yang menendang dan penumbuk kiri kekal di dagu sepanjang pusingan, lalu lutut ditarik balik dan mendarat. Dia meluncur masuk, jadi tendangan ini dibuat dari jarak dekat (`near`). Low kick kini gaya Muay Thai: langkah keluar 45°, berpusing atas bebola kaki, tulang kering dihayun hampir lurus ke peha depan lawan, tangan kanan dilempar ke bawah dan belakang. Kedua-dua tendangan memecut masuk ke titik hentaman (keyframe `'in'`, bukan ease biasa) supaya ada sentap.
+
+Pukulan yang kena beri hitstop, gegar kamera, bunyi dan nombor damage. Tendangan dan pukulan berat meninggalkan jejak libasan, setiap hentaman memancar di titik kena, dan pukulan berat menyentap kamera (zoom sekejap). Pukulan berturut-turut dalam 1.1 saat dikira combo. Bila HP kawan latih habis, dia jatuh (K.O.) dan bangun semula. Kamera dari sisi, sedikit di belakang Jai, supaya kedua-dua kaki nampak.
+
+**Model Jai (v0.6.0).** `assets/models/jai-source.glb` ialah model image-to-3D asal (T-pose, 5,258 segi tiga, tanpa rangka, tanpa normal, tangan bercantum macam sarung tangan). `scripts/rig-jai.py` memasangnya dalam Blender:
+
+```sh
+blender -b --python scripts/rig-jai.py -- assets/models/jai-source.glb assets/models/jai-fighter.glb assets/models/jai-fighter.blend
+```
+
+- **Rangka 54 tulang.** Pinggul, tiga ruas tulang belakang, leher, kepala; bahu, lengan atas, siku, pergelangan; pangkal peha, lutut, buku lali, jari kaki; tiga sendi bagi setiap jari dan ibu jari (15 setiap tangan); serta `ribs` dan `belly` untuk nafas. Kedudukan sendi dibaca dari keratan rentas mesh, kemudian model diskala ke 1.75 m.
+- **Berat tulang.** Mesh dicantum semula di jahitan UV (jadi satu permukaan tertutup) dan diberi berat dengan bone heat Blender (Automatic Weights). Kemudian: siku dan lutut dilentur di kawasan pendek, kasut keras ikut buku lali dan jari kaki dengan peralihan lembut di hujung seluar, dagu ikut kepala, peha tak tarik baju bila lutut diangkat.
+- **Tangan.** Tangan sarung asal dibuang dan diganti tangan lima jari yang dimodelkan (tapak dan pergelangan berbalut putih macam dalam gambar rujukan). Genggaman setiap jari disimpan dalam `extras.grip`; sudut ibu jari dikira supaya ia melintang di atas jari telunjuk dan jari tengah.
+- Eksport 509 KiB, 7,423 segi tiga, satu tekstur JPEG 1024². `jai-fighter.blend` mengandungi mesh, rangka, kumpulan berat, tekstur packed dan aksi `Fist` untuk diedit.
+
+`src/fighter.js` memuat model ini atas rangkanya sendiri; `src/retarget.js` menggerakkan badan ikut mannequin (pada skala 1), kemudian tangan digenggam ikut saluran `g` dalam pose dan nafas menskala `ribs`/`belly`. `npm test` menyemak semua sendi wujud dan menggerakkan kulit, berat dinormalkan, permukaan menghadap keluar, dan 210 pose dan keyframe dengan kod game sebenar: tangan jadi penumbuk, pergelangan lurus, penumbuk tidak masuk ke badan, penumbuk kanan di sebelah rahang dalam kekuda, dada bernafas, dan tiada kulit terkoyak.
+
+![Kekuda Jai v0.6.0: sudut gambar rujukan, pandangan lawan, sisi, tangan terbuka dan penumbuk](assets/previews/jai-stance-v060.jpg)
 
 **Model Amir fighter (v0.5.2).** `assets/models/amir-fighter.glb` ialah model asal Amir yang dikemaskan dalam Blender. Bahagian lengan terdedah dibina semula dengan gelung mesh teratur, siku/lutut diberi berat tulang setempat, penumbuk lengkap dengan buku lima, ibu jari dan balutan menjadi sebahagian daripada satu mesh. Dagu dan rambut ikut tulang kepala tanpa tertarik oleh leher; beg ikut dada dan kasut ikut tulang kaki. Bentuk kepala, baju dan seluar asal dikekalkan. Eksport sekitar 811 KiB, 11,859 segi tiga dan satu tekstur 1024².
 
-Mannequin tetap membuat pose, IK dan nafas tanpa kelihatan. `src/retarget.js` menggerakkan model mengikutnya, pada skala 1.17. Metadata `fighterReady` memastikan game tidak memasang penumbuk kedua atau mengecilkan tangan model yang sudah siap. Jika aset fighter gagal dimuat, model Amir asal digunakan.
+Mannequin tetap membuat pose, IK dan nafas tanpa kelihatan. `src/retarget.js` menggerakkan model mengikutnya (Amir pada skala 1.17). Tangan mengikut arah lengan bawah, jadi tangan model T-pose kekal lurus di pergelangan. Metadata `fighterReady` memastikan game tidak memasang penumbuk kedua atau mengecilkan tangan model yang sudah siap. Jika aset fighter gagal dimuat, model Amir asal digunakan.
 
 Penumbuk kanan yang dicerminkan kini mempunyai permukaan menghadap keluar. Ujian aset memeriksa arah setiap segi tiga dan normal pada kedua-dua penumbuk, selain semakan 147 pose.
 
@@ -52,7 +73,7 @@ Kekuda v0.5.3, dipose oleh kod game dan dirender dalam Blender:
 
 ![Kekuda Amir v0.5.3](assets/previews/amir-stance-v053.png)
 
-Butang "Watak" dalam Senarai gerak tukar antara Amir dan mannequin. Kalau model gagal dimuat, mannequin digunakan.
+Butang "Watak" dalam Senarai gerak tukar antara Jai, Amir dan mannequin. Kalau model gagal dimuat, mannequin digunakan.
 
 `watak.html` masih tunjuk Amir dan Nur (model mocap dari Malaysian-retro-game) untuk rujukan.
 
@@ -68,7 +89,8 @@ npm run dev   # http://localhost:4173
 - `src/brawler.js`: pose kekuda, semua gerak Jai (keyframe, kos stamina, tetingkap pukulan, damage, zon, knockback), combo, stamina dan headlock. Logik tulen, diuji dalam `tests/brawler.test.js`.
 - `src/breath.js`: nafas: rentak, tahan nafas masa menyerang, hembus selepasnya, dan usaha yang naik dan reda
 - `src/hands.js`: lipatan sendi yang tajam dan penumbuk untuk model image-to-3D
-- `src/retarget.js`: gerakkan model berkulit (dari `actor.js`) ikut mannequin yang dipose
+- `src/retarget.js`: gerakkan model berkulit (dari `actor.js` atau `fighter.js`) ikut mannequin yang dipose
+- `src/fighter.js`: model Jai atas rangka Blendernya sendiri: genggam tangan (`grip`) dan nafas (`breathe`)
 - `src/brawler-view.js`: gelanggang, kamera sisi, joystick dan butang, kesan pukulan, reaksi dan K.O. kawan latih.
 
 ## Cara watak dibina
@@ -93,12 +115,15 @@ Untuk tambah watak baru: eksport watak A-pose menghadap depan sebagai GLB, tulis
 - `src/illustration.js`: bahan toon dan garis dakwat
 - `src/viewer.js`: paparan watak dalam `watak.html`
 - `scripts/bake-model.mjs`: sediakan model image-to-3D untuk rangka
+- `scripts/rig-jai.py`: rig Blender untuk Jai (rangka, berat, tangan lima jari, tulang nafas)
+- `scripts/check-jai-rig.mjs`: semak rig Jai dengan kod game sebenar tanpa WebGL
 - `scripts/dev.mjs`: pelayan tempatan
 - `vendor/`: Three.js 0.186.1 (lesen MIT dalam `vendor/THREE-LICENSE.txt`)
 
 ## Aset dan kredit
 
 - `assets/models/kids-mocap.glb`: rangka manusia 53 tulang dan 14 klip mocap dari [Universal Animation Library](https://quaternius.com/packs/universalanimationlibrary.html) oleh Quaternius (CC0)
+- `assets/models/jai-source.glb`: model image-to-3D asal Jai (`sample_5.glb`, dibuat dengan trimesh) yang diberi pemilik projek; `jai-fighter.glb` dan `jai-fighter.blend` dibina daripadanya
 - `assets/models/amir.glb`, `nur.glb` dan fail sendinya: dari Malaysian-retro-game, dibuat dengan TRELLIS.2. Mereka saiz budak 12 tahun (sekitar 1.5 m) dan cuma pemegang tempat sehingga watak remaja siap.
 
 ## Seterusnya

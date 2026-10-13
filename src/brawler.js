@@ -4,23 +4,30 @@ import { over } from './keyframes.js';
 // a knee, a shoulder barge and one bit of MMA, the headlock. Pure rules and
 // pose data; brawler-view.js draws it.
 
-// Reference stance: both fists beside the face, elbows a little outward,
-// chin tucked and torso leaning forward over a stable left-foot lead.
-// Hand and foot targets are wrists and ankles in the
-// fighter's space; e*/k* are elbow and knee directions; r* = [toe-down pitch,
-// yaw] of each foot.
+// Reference stance (Jai's photo): chest turned open over a left-foot lead,
+// head turned back to the opponent with the chin down. The lead fist is up
+// in front of the face, its elbow tucked; the rear fist, wrapped, rests just
+// off the right jaw, forearm upright and elbow down and out.
+// Hand targets are wrists for the mannequin; they are set so Jai's model's
+// fists rest against his face and body without sinking in, at every key and
+// while the body turns between keys (scripts/check-jai-rig.mjs).
+// Hand and foot targets are wrists and ankles in the fighter's space; e*/k*
+// are elbow and knee directions; r* = [toe-down pitch, yaw] of each foot;
+// g = [left, right] hand grip, 0 open to 1 a closed fist.
 export const STANCE = {
-  hips: [.88, 0, -25, 0], spine: [10, 0, 0], chest: [0, 5, 0], neck: [4, 0, 0], head: [8, 20, 0],
-  hL: [.14, 1.58, .44], eL: [.65, -1, .1], hR: [-.12, 1.55, .4], eR: [-.65, -1, .1],
+  hips: [.88, 0, -40, 0], spine: [8, 0, 0], chest: [0, -12, 0], neck: [8, 5, 0], head: [10, 48, 0],
+  hL: [.07, 1.42, .36], eL: [.35, -1, .05], hR: [-.25, 1.39, .08], eR: [-.46, -1, -.28],
   fL: [.16, .075, .36], kL: [.15, 0, 1], fR: [-.22, .075, -.3], kR: [-.3, 0, 1], rL: [0, -15], rR: [10, -35],
-  fwd: [0]
+  g: [1, 1], fwd: [0]
 };
 const P = part => over(STANCE, part), S = P({});
 const at = (fwd, part = {}) => P({ ...part, fwd: [fwd] });
-const GUARD_L = { hL: [.16, 1.5, .25] };
+const GUARD_L = { hL: [.2, 1.44, .28] };
 
 // hit: window [from, to] in seconds, the striking part, damage, where it
 // lands (head, body, low) and knockback in metres.
+// near: the distance to the opponent a move is built to land from, when it
+// is not the usual one (a kick slides in close).
 export const MOVES = {
   jab: { name: 'Jab', cost: 6, dur: .3, chain: 'cross', chainAt: .16, keys: [[0, S],
     [.07, P({ hips: [.92, 0, -35, 0], chest: [0, -12, 0], head: [5, 47, 0], hL: [.06, 1.55, .9], eL: [1, -.3, 0] })],
@@ -31,14 +38,15 @@ export const MOVES = {
     [.16, at(.08, { hips: [.92, 0, 10, 0], chest: [0, 30, 0], head: [5, -40, 0], hR: [-.02, 1.55, .95], eR: [-1, -.3, 0], ...GUARD_L, fR: [-.14, .1, -.2], rR: [30, -10] })], [.38, at(.08)]],
     hits: [{ t: [.07, .17], part: 'handR', dmg: 6, zone: 'head', knock: .25 }] },
   uppercut: { name: 'Uppercut', cost: 10, dur: .52, keys: [[0, S],
-    [.11, P({ hips: [.82, 0, -35, 0], spine: [22, 0, 0], head: [0, 35, 0], hL: [.2, 1.1, .3], eL: [.6, -1, 0] })],
+    [.11, P({ hips: [.82, 0, -35, 0], spine: [22, 0, 0], head: [0, 35, 0], hL: [.2, 1.1, .3], eL: [.6, -1, 0], hR: [-.27, 1.42, .07] })],
     [.22, at(.16, { hips: [.95, 0, -5, 0], spine: [-6, 0, 0], chest: [0, -25, 0], head: [-5, 30, 0], hL: [.04, 1.75, .55], eL: [.3, -1, .2] })],
     [.3, at(.16, { hips: [.95, 0, -5, 0], spine: [-6, 0, 0], chest: [0, -25, 0], head: [-5, 30, 0], hL: [.04, 1.75, .55], eL: [.3, -1, .2] })], [.52, at(.16)]],
     hits: [{ t: [.16, .28], part: 'handL', dmg: 9, zone: 'head', knock: .45 }] },
   haymaker: { name: 'Haymaker', cost: 18, dur: .78, keys: [[0, S],
     [.2, P({ hips: [.9, 0, -50, 0], chest: [0, -20, 0], head: [5, 70, 0], hR: [-.5, 1.5, -.25], eR: [-.3, -1, -.5], hL: [.2, 1.45, .4] })],
     [.33, at(.15, { hips: [.9, 0, 25, 0], chest: [0, 35, 0], head: [5, -60, 0], hR: [.15, 1.55, .75], eR: [-1, .2, 0], ...GUARD_L, fR: [-.14, .1, -.2], rR: [30, -10] })],
-    [.43, at(.18, { hips: [.9, 0, 40, 0], chest: [0, 45, 0], head: [5, -75, 0], hR: [.35, 1.45, .5], eR: [-1, .2, 0], ...GUARD_L, fR: [-.14, .1, -.2], rR: [30, -10] })], [.78, at(.18)]],
+    [.43, at(.18, { hips: [.9, 0, 40, 0], chest: [0, 45, 0], head: [5, -75, 0], hR: [.35, 1.45, .5], eR: [-1, .2, 0], ...GUARD_L, fR: [-.14, .1, -.2], rR: [30, -10] })],
+    [.6, at(.18, { hips: [.89, 0, 2, 0], chest: [0, 18, 0], head: [7, -16, 0], hR: [-.07, 1.34, .42], eR: [-.74, -.37, -.13], ...GUARD_L, fR: [-.18, .09, -.25], rR: [20, -22] })], [.78, at(.18)]],
     hits: [{ t: [.27, .38], part: 'handR', dmg: 14, zone: 'head', knock: .8, heavy: true }] },
   pushKick: { name: 'Push kick', cost: 12, dur: .66, keys: [[0, S],
     [.15, P({ hips: [.9, 0, -20, 0], spine: [-5, 0, 0], fL: [.1, .55, .45], kL: [0, 1, 1] })],
@@ -46,40 +54,62 @@ export const MOVES = {
     [.36, P({ hips: [.92, 0, -15, 0], spine: [-18, 0, 0], fL: [.08, .85, .95], kL: [0, 1, .3], rL: [-50, 0], fR: [-.14, .075, -.3] })],
     [.5, P({ hips: [.9, 0, -20, 0], fL: [.1, .45, .35], kL: [0, 1, 1] })], [.66, S]],
     hits: [{ t: [.22, .36], part: 'footL', dmg: 8, zone: 'body', knock: 1 }] },
-  lowKick: { name: 'Low kick', cost: 10, dur: .6, keys: [[0, S],
-    [.14, at(.09, { hips: [.9, 0, 30, 0], chest: [0, 20, 0], head: [5, -50, 0], fR: [-.35, .35, .15], kR: [-1, .6, .5], rR: [30, 40], rL: [0, 40] })],
-    [.26, at(.18, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })],
-    [.34, at(.18, { hips: [.9, 0, 70, 0], chest: [0, 15, 0], head: [5, -85, 0], fR: [.1, .45, .7], kR: [-.5, 1, .6], rR: [40, 90], rL: [0, 40], hR: [-.35, 1.1, -.2] })],
-    [.46, at(.18, { hips: [.9, 0, 25, 0], chest: [0, 15, 0], head: [5, -40, 0], fR: [-.28, .3, .18], kR: [-1, .6, .6], rR: [30, 30], rL: [0, 25] })], [.6, at(.18)]],
-    hits: [{ t: [.2, .34], part: 'footR', dmg: 7, zone: 'low', knock: .2 }] },
-  roundhouse: { name: 'Tendang hayun', cost: 16, dur: .82, keys: [[0, S],
-    [.16, at(.05, { hips: [.9, 0, 40, 0], chest: [0, 10, 0], head: [5, -50, 0], fR: [-.3, .7, .2], kR: [-1, 1, .5], rR: [30, 40], rL: [0, 60], hR: [-.3, 1.2, -.1], ...GUARD_L })],
-    [.3, at(.1, { hips: [.9, 0, 85, 0], spine: [-10, 0, -20], chest: [0, 0, 0], head: [10, -85, 10], fR: [.15, 1.45, .8], kR: [-.6, 1, .3], rR: [45, 90], rL: [0, 70], hR: [-.35, 1, -.35], eR: [-1, -1, 0], ...GUARD_L })],
-    [.38, at(.1, { hips: [.9, 0, 95, 0], spine: [-10, 0, -20], chest: [0, 0, 0], head: [10, -90, 10], fR: [.35, 1.35, .6], kR: [-.6, 1, .3], rR: [45, 100], rL: [0, 75], hR: [-.35, 1, -.35], eR: [-1, -1, 0], ...GUARD_L })],
-    [.52, at(.1, { hips: [.9, 0, 50, 0], chest: [0, 10, 0], head: [5, -60, 0], fR: [-.22, .62, .3], kR: [-.6, 1, .8], rR: [30, 40], rL: [0, 55], ...GUARD_L })], [.82, at(.1)]],
-    hits: [{ t: [.25, .4], part: 'footR', dmg: 13, zone: 'head', knock: .9, heavy: true }] },
+  // Muay Thai low kick to the lead thigh: step out at 45 degrees and sit,
+  // then pivot up on the ball of the lead foot and swing the rear shin through
+  // the thigh, hips and shoulders turning over, the rear arm thrown down and
+  // back against the turn, the lead hand on the chin.
+  lowKick: { name: 'Low kick', cost: 10, dur: .6, near: .9, keys: [[0, S],
+    [.09, at(.06, { hips: [.84, 0, -55, 0], spine: [14, 0, 0], fL: [.24, .075, .44], rL: [0, 35], kL: [.3, 0, 1], fR: [-.2, .1, -.28], rR: [35, -30], hR: [-.3, 1.3, -.05] })],
+    [.19, at(.12, { hips: [.88, 0, 50, -8], spine: [-6, 0, -6], chest: [0, 10, 0], head: [8, -45, 0], fL: [.24, .085, .44], rL: [20, 100], kL: [.3, 0, 1], fR: [-.2, .6, .72], kR: [-.5, .5, 1], rR: [20, 60], hL: [.15, 1.42, .32], hR: [-.4, 1, -.35], eR: [-1, -.4, -.3] }), 'in'],
+    [.27, at(.13, { hips: [.88, 0, 85, -10], spine: [-10, 0, -8], chest: [0, 5, 0], head: [8, -70, 0], fL: [.24, .085, .44], rL: [25, 125], kL: [.3, 0, 1], fR: [.28, .6, .68], kR: [.3, .6, 1], rR: [20, 95], hL: [.15, 1.42, .32], hR: [-.45, .95, -.4], eR: [-1, -.3, -.3] })],
+    [.42, at(.12, { hips: [.86, 0, 15, 0], spine: [6, 0, 0], head: [8, -15, 0], fL: [.2, .075, .4], rL: [10, 30], fR: [-.2, .2, -.1], kR: [-.4, .3, 1], rR: [20, 0], hR: [-.33, 1.26, -.03] })], [.6, at(.12), 'out']],
+    hits: [{ t: [.15, .29], part: 'footR', dmg: 8, zone: 'low', knock: .35 }] },
+  // Taekwondo roundhouse to the head (dollyo chagi), after the references:
+  // load on the lead foot, chamber the rear knee high, then pivot up on the
+  // ball of the lead foot (heel to the target, about 130 degrees of hip turn)
+  // and snap the straight leg through at head height, body leaning away, the
+  // kicking-side arm swung straight down along the body, the lead fist kept at
+  // the chin all through the turn (keys every few frames so it rides with the
+  // body). Recoil the knee and land. It slides in: thrown from close range.
+  roundhouse: { name: 'Tendang hayun', cost: 16, dur: .78, near: .66, keys: [[0, S],
+    [.1, at(.04, { hips: [.86, 0, -20, 0], spine: [12, 0, 0], fR: [-.2, .1, -.22], rR: [30, -20], rL: [5, 10], kL: [.2, 0, 1], hR: [-.29, 1.41, .07], ...GUARD_L })],
+    [.15, at(.09, { hips: [.89, 0, 12, -5], spine: [6, 0, 0], chest: [0, -4, 0], head: [10, 4, 0], eR: [-.73, -.9, -.14], fL: [.14, .08, .33], kL: [.25, 0, 1], fR: [-.18, .47, .04], kR: [-.3, .5, .9], rL: [12, 40], rR: [35, 5], hL: [.22, 1.37, .23], hR: [-.24, 1.23, -.07] })],
+    [.2, at(.14, { hips: [.92, 0, 45, -10], spine: [0, 0, 0], chest: [0, 5, 0], head: [10, -40, 0], fL: [.12, .09, .3], rL: [20, 70], kL: [.3, 0, 1], fR: [-.15, .85, .3], kR: [-.3, 1, .8], rR: [40, 30], eR: [-1, -.8, 0], hL: [.32, 1.49, .1], hR: [-.19, 1.04, -.21] })],
+    [.3, at(.25, { hips: [.98, 0, 100, -38], spine: [-10, 0, -5], chest: [0, -10, 0], neck: [0, -10, 0], head: [15, -70, 15], eR: [-1, -.5, 0], fL: [.12, .09, .3], kL: [.3, 0, 1], fR: [0, 1.95, .72], kR: [1, .4, 0], rL: [25, 130], rR: [0, 90], hL: [.04, 1.4, -.21], hR: [-.39, 1.07, .06] }), 'in'],
+    [.34, at(.26, { hips: [.97, 0, 110, -36], spine: [-10, 0, -5], chest: [0, -10, 0], neck: [0, -10, 0], head: [12, -80, 12], eR: [-1, -.5, 0], fL: [.12, .09, .3], kL: [.3, 0, 1], fR: [.15, 1.88, .66], kR: [1, .4, 0], rL: [25, 135], rR: [0, 100], hL: [-.01, 1.41, -.19], hR: [-.36, 1.07, .14] })],
+    [.38, at(.27, { hips: [.97, 0, 120, -35], spine: [-10, 0, -5], chest: [0, -10, 0], neck: [0, -10, 0], head: [10, -90, 10], eR: [-1, -.5, 0], fL: [.12, .09, .3], kL: [.3, 0, 1], fR: [.3, 1.8, .6], kR: [1, .4, 0], rL: [25, 140], rR: [0, 110], hL: [-.06, 1.47, -.12], hR: [-.33, 1.07, .21] })],
+    [.41, at(.27, { hips: [.96, 0, 108, -28], spine: [-6, 0, -3.5], chest: [0, -8, 0], neck: [2, -6, 0], head: [9, -81, 8], eR: [-1, -.57, 0], fL: [.12, .09, .3], kL: [.3, 0, 1], fR: [.22, 1.55, .5], kR: [.83, .55, .12], rL: [22, 128], rR: [10, 98], hL: [.05, 1.44, -.12], hR: [-.28, 1.07, .12] })],
+    [.44, at(.27, { hips: [.95, 0, 95, -22], spine: [-1, 0, -2], chest: [0, -5, 0], neck: [4, -2, 0], head: [8, -72, 5], eR: [-1, -.65, 0], fL: [.12, .08, .3], kL: [.3, 0, 1], fR: [.13, 1.3, .4], kR: [.65, .7, .25], rL: [20, 115], rR: [20, 85], hL: [.14, 1.43, -.06], hR: [-.22, 1.06, .02] })],
+    [.47, at(.27, { hips: [.94, 0, 82, -16], spine: [3.5, 0, -1], chest: [0, -2.5, 0], neck: [6, 1.5, 0], head: [6, -64, 2.5], eR: [-1, -.72, 0], fL: [.12, .08, .3], kL: [.3, 0, 1], fR: [.04, 1.05, .3], kR: [.48, .85, .37], rL: [18, 102], rR: [30, 72], hL: [.22, 1.42, .02], hR: [-.18, 1.05, -.08] })],
+    [.5, at(.27, { hips: [.92, 0, 70, -10], chest: [0, 0, 0], head: [5, -55, 0], eR: [-1, -.8, 0], fL: [.12, .08, .3], kL: [.3, 0, 1], fR: [-.05, .8, .2], kR: [.3, 1, .5], rL: [15, 90], rR: [40, 60], hL: [.28, 1.42, .12], hR: [-.11, 1.04, -.17] })],
+    [.53, at(.27, { hips: [.91, 0, 45, -8], chest: [0, -2.76, 0], head: [6, -31, 0], eR: [-.88, -.85, -.06], fL: [.13, .08, .31], kL: [.26, 0, 1], fR: [-.09, .63, .09], kR: [.16, .77, .61], rL: [11, 66], rR: [33, 38], hL: [.26, 1.42, .22], hR: [-.15, 1.12, -.12] })],
+    [.57, at(.27, { hips: [.9, 0, 6, -4], chest: [0, -7, 0], head: [8, 5, 0], eR: [-.69, -.92, -.16], fL: [.14, .08, .33], kL: [.21, 0, 1], fR: [-.15, .38, -.09], kR: [-.05, .42, .79], rL: [6, 29], rR: [23, 5], hL: [.15, 1.4, .33], hR: [-.21, 1.24, -.06] })],
+    [.61, at(.27, { hips: [.89, 0, -12, -2.5], chest: [0, -9, 0], head: [9, 22, 0], eR: [-.6, -.95, -.21], fL: [.15, .08, .34], kL: [.19, 0, 1], fR: [-.17, .27, -.17], kR: [-.15, .26, .87], rL: [4, 12], rR: [18, -10], hL: [.1, 1.39, .35], hR: [-.24, 1.28, -.01] })],
+    [.65, at(.27, { hips: [.88, 0, -29, -1], chest: [0, -11, 0], head: [10, 38, 0], eR: [-.51, -.98, -.25], fL: [.16, .08, .35], kL: [.17, 0, 1], fR: [-.2, .15, -.25], kR: [-.24, .1, .95], rL: [2, -4], rR: [13, -25], hL: [.04, 1.38, .34], hR: [-.24, 1.35, .05] })],
+    [.78, at(.27), 'out']],
+    hits: [{ t: [.26, .4], part: 'footR', dmg: 13, zone: 'head', knock: .9, heavy: true }] },
   knee: { name: 'Lutut', cost: 10, dur: .56, keys: [[0, S],
     [.12, P({ hL: [.12, 1.5, .7], hR: [-.1, 1.5, .7], eL: [.5, -1, 0], eR: [-.5, -1, 0] })],
     [.24, at(.27, { hips: [.95, 0, 0, 0], spine: [-10, 0, 0], chest: [0, 0, 0], head: [5, 0, 0], hL: [.1, 1.3, .55], hR: [-.1, 1.3, .55], eL: [.5, -1, 0], eR: [-.5, -1, 0], fR: [-.08, .75, .25], kR: [0, .6, 1], rR: [40, 0] })],
     [.32, at(.27, { hips: [.95, 0, 0, 0], spine: [-10, 0, 0], chest: [0, 0, 0], head: [5, 0, 0], hL: [.1, 1.3, .55], hR: [-.1, 1.3, .55], eL: [.5, -1, 0], eR: [-.5, -1, 0], fR: [-.08, .75, .25], kR: [0, .6, 1], rR: [40, 0] })], [.56, at(.27)]],
     hits: [{ t: [.18, .32], part: 'kneeR', dmg: 10, zone: 'body', knock: .5 }] },
   barge: { name: 'Rempuh', cost: 14, dur: .72, keys: [[0, S],
-    [.18, P({ hips: [.82, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.05, 1.3, .12], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.2, .075, -.28] })],
-    [.27, at(.35, { hips: [.84, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.05, 1.3, .12], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .1], fR: [-.1, .2, .05] })],
-    [.36, at(.8, { hips: [.86, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.05, 1.3, .12], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.18, .075, -.2] })],
-    [.44, at(.8, { hips: [.86, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.05, 1.3, .12], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.18, .075, -.2] })], [.72, at(.8)]],
+    [.18, P({ hips: [.82, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.47, 1.32, .03], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.2, .075, -.28] })],
+    [.27, at(.35, { hips: [.84, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.47, 1.32, .03], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .1], fR: [-.1, .2, .05] })],
+    [.36, at(.8, { hips: [.86, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.47, 1.32, .03], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.18, .075, -.2] })],
+    [.44, at(.8, { hips: [.86, 0, -70, 0], spine: [25, 0, 0], chest: [0, -15, 0], head: [-10, 85, 0], hL: [.15, 1.3, .15], hR: [-.47, 1.32, .03], eL: [1, -1, 0], eR: [-1, -1, 0], fL: [.15, .075, .3], fR: [-.18, .075, -.2] })], [.72, at(.8)]],
     hits: [{ t: [.24, .42], part: 'shoulderL', dmg: 8, zone: 'body', knock: 1.5 }] },
   taunt: { name: 'Ejek', cost: 0, dur: 1.3, gain: 25, keys: [[0, S],
-    [.3, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 0, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10] })],
-    [.65, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 20, 0], hL: [.25, 1.6, .35], hR: [-.55, 1.25, .2], eL: [1, -1, 0], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10] })],
-    [.95, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, -10, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10] })], [1.3, S]],
+    [.3, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 0, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10], g: [0, 0] })],
+    [.65, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, 20, 0], hL: [.25, 1.6, .35], hR: [-.55, 1.25, .2], eL: [1, -1, 0], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10], g: [.6, 0] })],
+    [.95, P({ hips: [.95, 0, 0, 0], spine: [-12, 0, 0], chest: [0, 0, 0], head: [-15, -10, 0], hL: [.55, 1.25, .2], hR: [-.55, 1.25, .2], eL: [0, -1, -1], eR: [0, -1, -1], fL: [.15, .075, .1], fR: [-.15, .075, -.1], rL: [0, 10], rR: [0, -10], g: [0, 0] })], [1.3, S]],
     hits: [] }
 };
 
 // The headlock: wrap the left arm round the opponent's neck, three short
 // uppercuts, then shove them off. `grab` is when the opponent is held.
-const WRAP = { hips: [.88, 0, -40, 0], spine: [20, 0, 0], chest: [0, -15, 0], head: [10, 55, 0], hL: [0, 1.15, .35], eL: [1, .2, .4] };
-const DIP = { ...WRAP, hR: [-.15, 1, .25], eR: [-.4, -1, 0] }, UP = { ...WRAP, hR: [-.02, 1.25, .55], eR: [-.3, -1, .3] };
+const WRAP = { hips: [.88, 0, -40, 0], spine: [20, 0, 0], chest: [0, -15, 0], head: [10, 55, 0], hL: [0, 1.15, .35], eL: [1, .2, .4], hR: [-.36, 1.34, .1] };
+const DIP = { ...WRAP, hR: [-.15, 1, .25], eR: [-.4, -1, 0] }, UP = { ...WRAP, hR: [-.1, 1.25, .55], eR: [-.3, -1, .3] };
 MOVES.headlock = { name: 'Kepit kepala', cost: 20, dur: 2.4, reach: 1.15, grab: [.3, 2.02], keys: [[0, S],
   [.22, at(.1, { spine: [15, 0, 0], hL: [.3, 1.4, .75], eL: [1, .3, 0], hR: [-.05, 1.4, .6] })],
   [.4, at(.1, WRAP)], [.55, at(.1, DIP)], [.7, at(.1, UP)], [.9, at(.1, DIP)], [1.15, at(.1, UP)], [1.35, at(.1, DIP)], [1.6, at(.1, UP)], [1.85, at(.1, DIP)],
@@ -133,11 +163,11 @@ export function tick(f, dt) {
 export const activeHits = f => f.move ? MOVES[f.move].hits.map((h, i) => ({ i, ...h })).filter(h => f.t >= h.t[0] && f.t <= h.t[1]) : [];
 export const grabbing = f => f.move === 'headlock' && f.t >= MOVES.headlock.grab[0] && f.t <= MOVES.headlock.grab[1];
 
-// Covering up: both forearms in front of the face, chin down, knees bent.
-export const GUARD = P({ hips: [.88, 0, -25, 0], spine: [14, 0, 0], head: [12, 15, 0], hL: [.08, 1.6, .24], eL: [.5, -1, .1], hR: [-.08, 1.6, .22], eR: [-.5, -1, .1] });
+// Covering up: both fists side by side in front of the face, chin down, knees bent.
+export const GUARD = P({ hips: [.88, 0, -25, 0], spine: [14, 0, 0], chest: [0, 5, 0], neck: [4, 0, 0], head: [12, 15, 0], hL: [.02, 1.36, .39], eL: [.5, -1, .1], hR: [-.2, 1.35, .36], eR: [-.5, -1, .1] });
 // The sparring partner: a loose stance, a reaction for each zone, and the
 // bent-over shape inside the headlock.
-const IDLE = P({ hips: [.93, 0, -15, 0], spine: [4, 0, 0], chest: [0, 5, 0], head: [3, 10, 0], hL: [.16, 1.3, .3], hR: [-.12, 1.32, .24] });
+const IDLE = P({ hips: [.93, 0, -15, 0], spine: [4, 0, 0], chest: [0, 5, 0], neck: [4, 0, 0], head: [3, 10, 0], hL: [.16, 1.3, .3], eL: [.65, -1, .1], hR: [-.12, 1.32, .24], eR: [-.65, -1, .1] });
 const Q = part => over(IDLE, part);
 export const PARTNER = {
   idle: IDLE,

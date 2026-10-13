@@ -9,6 +9,7 @@ test('sampling eases between keys and holds the ends', () => {
   assert.deepEqual(sample(keys, .5), { x: [.5, 15] });
   assert.ok(sample(keys, .25).x[0] < .25, 'eases in');
   assert.deepEqual(mix(a, b, 0), a);
+  assert.deepEqual(sample([[0, a], [1, b, 'in']], .5), { x: [.125, 11.25] }, 'a strike accelerates into its key');
 });
 
 test('every move key carries every stance channel and ends back in stance', () => {
@@ -74,4 +75,31 @@ test('a tireless fighter attacks forever', () => {
   const f = newFighter({ tireless: true });
   for (let i = 0; i < 30; i++) { assert.ok(press(f, 'tendang').move); tick(f, 1); }
   assert.equal(f.stamina, STAMINA.max);
+});
+
+test('the stance follows Jai\'s reference photo and the taunt opens his hands', () => {
+  // Lead fist up in front of the face, rear fist beside the right jaw with its elbow down and out.
+  assert.ok(STANCE.hL[2] > STANCE.hR[2] + .1 && STANCE.hL[1] > 1.35, 'lead fist out in front of the face');
+  assert.ok(STANCE.hR[0] < -.2 && STANCE.eR[0] < 0 && STANCE.eR[1] <= -1 && STANCE.eL[1] <= -1, 'rear fist out at the jaw, both elbows down');
+  assert.ok(STANCE.hips[2] < -30 && STANCE.head[1] > 40, 'chest turned open, head back to the opponent');
+  assert.deepEqual(STANCE.g, [1, 1], 'both hands closed');
+  assert.ok(MOVES.taunt.keys.some(([, p]) => p.g[0] < .5 && p.g[1] < .5), 'the taunt beckons with open hands');
+});
+
+test('the kicks follow the references: pivot, hips turned over, slide in, snap to impact', () => {
+  const impact = (m, t) => m.keys.find(k => k[0] === t);
+  // Taekwondo roundhouse to the head: about 130 degrees of hip turn, the
+  // standing foot pivoted heel-to-target and up on its ball, body leaning
+  // away, rear arm swung down, snapping into the kick, from close range.
+  const rh = MOVES.roundhouse, [, p, e] = impact(rh, .3);
+  assert.equal(e, 'in'); assert.ok(p.hips[2] - STANCE.hips[2] >= 130 && p.hips[3] < -20, 'hips turned over');
+  assert.ok(p.rL[1] >= 120 && p.rL[0] > 0 && p.hips[0] > STANCE.hips[0], 'up on the ball of the pivoted foot');
+  assert.ok(p.fR[1] > 1.7 && p.hR[1] < 1.15, 'leg at head height, rear arm swung down along the kicking side');
+  assert.ok(rh.near < .85 && rh.hits[0].t[0] < .3 && rh.hits[0].t[1] > .3);
+  // Muay Thai low kick: step out, pivot, swing the shin through the thigh
+  // with the rear arm thrown down and back, snapping in.
+  const lk = MOVES.lowKick, [, q, f] = impact(lk, .19);
+  assert.equal(f, 'in'); assert.ok(lk.keys[1][1].fL[0] > STANCE.fL[0] + .05, 'steps out');
+  assert.ok(q.rL[1] >= 90 && q.hips[2] - STANCE.hips[2] >= 80 && q.hR[1] < 1.1 && q.hR[2] < -.3, 'pivots, turns over, arm thrown back');
+  assert.ok(q.fR[1] > .5 && q.fR[1] < .7, 'shin at thigh height');
 });
