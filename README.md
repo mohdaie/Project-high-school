@@ -2,32 +2,32 @@
 
 Game lawan 1 lawan 1 untuk telefon. Watak remaja bertarung di satu gelanggang guna silat, boxing, MMA dan capoeira. Lawan komputer dulu.
 
-## Status: v0.6.0, tulang belakang baru
+## Status: v0.6.0, gaduh jalanan atas tulang belakang baru
 
 `index.html` ialah gelanggang latihan. **Jai**, budak gaduh jalanan, lawan kawan latih yang cuma terima pukulan. Tulang belakang kedua-dua watak kini ialah **mannequin Universal Animation Library 2** (Quaternius, CC0): satu model berkulit sekitar 1.8 m dengan rangka 65 tulang gaya Unreal, dan setiap gerak dimainkan terus dari klip animasi mocap pakej itu. Mannequin bersendi lama, IK dan gerak keyframe sudah dibuang.
 
-**Jai tetap Jai.** Jai memakai modelnya sendiri, budak sekolah dari gambar rujukan: baju putih lengan panjang, tali leher hitam berjalur, seluar hitam dan kasut putih (`assets/models/jai-fighter.glb`, 7,423 segi tiga, dipasang rangka dalam Blender oleh `scripts/rig-jai.py` daripada `jai-source.glb`). Rangka Jai dalam T-pose dengan bingkai tulangnya sendiri, jadi `src/wear.js` memberi setiap tulangnya pusingan dunia tulang mannequin yang sepadan, dengan satu pembetulan tetap dari T-pose ke pose rehat mannequin. Jari Jai ikut genggaman dalam klip (tergenggam pada kayu), tulang `ribs` dan `belly` bernafas, dan pinggul bergerak ikut nisbah panjang kaki. Mannequin terus bermain tanpa kelihatan dan semakan pukulan dibuat padanya (tangan Jai paling jauh 21 cm daripadanya, masa lengan terlunjur penuh); kayu, tong dan kapur keluar dari tangan Jai sendiri. Butang "Watak" dalam Senarai gerak tukar antara Jai dan mannequin. Kalau model Jai gagal dimuat, mannequin digunakan. Kawan latih kekal mannequin.
+**Jai tetap Jai.** Jai memakai modelnya sendiri, budak sekolah dari gambar rujukan: baju putih lengan panjang, tali leher hitam berjalur, seluar hitam dan kasut putih (`assets/models/jai-fighter.glb`, 7,423 segi tiga, dipasang rangka dalam Blender oleh `scripts/rig-jai.py` daripada `jai-source.glb`). Rangka Jai dalam T-pose dengan bingkai tulangnya sendiri, jadi `src/wear.js` memberi setiap tulangnya pusingan dunia tulang mannequin yang sepadan, dengan satu pembetulan tetap dari T-pose ke pose rehat mannequin. Jari Jai ikut genggaman dalam klip, tulang `ribs` dan `belly` bernafas, dan pinggul bergerak ikut nisbah panjang kaki. Mannequin terus bermain tanpa kelihatan dan semakan pukulan dibuat padanya (tangan Jai paling jauh 21 cm daripadanya, masa lengan terlunjur penuh). Butang "Watak" dalam Senarai gerak tukar antara Jai dan mannequin. Kalau model Jai gagal dimuat, mannequin digunakan. Kawan latih kekal mannequin.
+
+**Gaduh jalanan sahaja.** Tangan kosong: tiada senjata, tiada perisai, tiada barang dibaling. Pakej UAL2 Standard kebanyakannya klip pedang dan perisai; tanpa pedang, libasan itu jadi hayunan tangan kosong yang liar, dan gerak perisai jadi tolak dan rempuh bahu.
 
 Empat butang macam pad PS5. Arah joystick (ke lawan atau undur) pilih variasi setiap butang.
 
 | Butang | Keyboard | Gerak | Klip UAL2 |
 |---|---|---|---|
-| □ Tetak | J | Tetak. Tekan 3 kali: tetak, tetak balik, **tetak penamat** | Sword_Regular_A, B, C (+ _Rec bila berhenti) |
-| → □ | D + J | Terkam, meluru dengan kayu | Sword_Dash |
+| □ Tumbuk | J | Hayun. Tekan 3 kali: hayun, hayun balik, **hayun pusing** | Sword_Regular_A, B, C (+ _Rec bila berhenti) |
+| → □ | D + J | Terkam, meluru dengan penumbuk | Sword_Dash |
 | ← □ | A + J | Hook | Melee_Hook (+ _Rec) |
-| △ Berat | I | **Combo berat**, 3 libasan, yang terakhir jatuhkan lawan | Sword_Heavy_Combo |
-| → △ | D + I | Combo kayu, 4 libasan | Sword_Regular_Combo |
-| ← △ | A + I | Baling kapur | OverhandThrow |
-| ○ Tong | L | Hentak tong | Shield_OneShot |
-| → ○ | D + L | Rempuh tong | Shield_Dash |
+| △ Berat | I | **Mengamuk**, 3 pukulan, yang last jatuhkan lawan | Sword_Heavy_Combo |
+| → △ | D + I | Combo jalanan, 4 pukulan | Sword_Regular_Combo |
+| ← △ | A + I | Ejek (silang tangan), isi semula stamina | Idle_FoldArms_Loop |
+| ○ Kasar | L | Tolak | Shield_OneShot |
+| → ○ | D + L | Rempuh bahu | Shield_Dash |
 | ← ○ | A + L | Cakar | Zombie_Scratch |
-| ✕ Tahan | K (tahan) | Tutup dengan tong | Idle_Shield_Loop |
-| → ✕ | D + K | Gelongsor ke kaki | Slide_Start, Slide_Exit |
+| ✕ Tahan | K (tahan) | Tutup muka | Idle_Shield_Loop |
+| → ✕ | D + K | Sapu kaki | Slide_Start, Slide_Exit |
 | ← ✕ | A + K | Lompat | NinjaJump_Start, _Idle_Loop, _Land |
 
-Kayu (sebatang kayu) dan tong (tudung tong sampah sebagai perisai) muncul di tangan hanya masa gerak yang guna, dan hilang semula selepasnya.
-
-Kawan latih guna klip yang sama: Hit_Knockback (tersentak bila kena pukulan ringan, jatuh terlentang bila kena pukulan berat), LayToIdle untuk bangun, Sword_Block bila dia tahan dan Idle_Shield_Break bila tahanannya pecah. Butang "Kawan" dalam Senarai gerak suruh dia tahan dengan tong: pukulan ringan cuma kena 20% damage, pukulan berat pecahkan tahanan (60%).
+Kawan latih guna klip yang sama: Hit_Knockback (tersentak bila kena pukulan ringan, jatuh terlentang bila kena pukulan berat), LayToIdle untuk bangun, Sword_Block bila dia tutup muka dan Idle_Shield_Break bila tahanannya pecah. Butang "Kawan" dalam Senarai gerak suruh dia tutup muka: pukulan ringan cuma kena 20% damage, pukulan berat pecahkan tahanan (60%).
 
 Joystick (sentuh separuh kiri skrin) ada kelajuan dinamik: tolak sikit jalan, tolak habis lari. Idle, jalan, jog dan pecut (dari Universal Animation Library 1, rangka yang sama) diadun ikut laju dan kakinya kekal serentak. Keyboard: WASD atau anak panah jalan, tambah Shift untuk lari.
 
@@ -35,13 +35,13 @@ Masa latihan stamina tak terhad. Butang "Penat" dalam Senarai gerak hidupkan sem
 
 **Root motion.** Klip dari `UAL2_Standard_RM.glb` membawa pergerakan badan pada tulang `root`. Game membaca laluan itu dan menggerakkan watak (didarab `rm` setiap gerak supaya muat dalam gelanggang), tapi Jai tidak akan dibawa lebih dekat daripada jarak terbaik geraknya (`reach`). Kalau serangan dimula sedikit jauh (sampai 0.9 m lebih), Jai melangkah masuk sendiri sebelum pukulan sampai. Lebih jauh dari tu, pukulan tersasar.
 
-**Pukulan.** Tetingkap pukulan setiap gerak diambil dari data animasi (masa hujung kayu, penumbuk, tong atau kaki paling laju dan paling jauh ke depan). Titik pukulan diseret dari bingkai lepas, jadi libasan laju tidak terlepas sasaran (kepala, dada, pinggul, betis, kaki). Kapur yang dibaling terbang melengkung dan boleh kena dari jauh.
+**Pukulan.** Yang memukul cuma penumbuk, bahu kiri (rempuh) dan kaki kanan (sapu). Tetingkap pukulan setiap gerak diambil dari data animasi (masa penumbuk, bahu atau kaki paling laju dan paling jauh ke depan). Titik pukulan diseret dari bingkai lepas, jadi hayunan laju tidak terlepas sasaran (kepala, dada, pinggul, betis, kaki).
 
 **Nafas.** Rentak nafas dalam `src/breath.js` masih digunakan: dada mannequin naik turun di atas animasi, ditahan masa menyerang dan dihembus selepasnya.
 
 Pukulan yang kena beri hitstop, gegar kamera, bunyi dan nombor damage. Pukulan berturut-turut dalam 1.1 saat dikira combo. Bila HP kawan latih habis dia jatuh (K.O.) dan bangun semula. Kamera dari sisi, sedikit di belakang Jai.
 
-![Jai di atas rangka baru: berdiri, tetak, combo berat, rempuh tong, gelongsor, baling kapur](assets/previews/fighter-moves-v060.jpg)
+![Gaduh jalanan: hayun, hook, mengamuk, rempuh bahu, sapu kaki, ejek](assets/previews/fighter-moves-v060.jpg)
 
 ```sh
 npm test      # node --test tests/*.test.js
@@ -56,7 +56,7 @@ npm run dev   # http://localhost:4173
 node scripts/build-fighter.mjs "<UAL2>/Unreal-Godot/UAL2_Standard_RM.glb" assets/models/kids-mocap.glb assets/models/fighter.glb
 ```
 
-Skrip ambil mesh, rangka dan 25 klip bertarung dari UAL2, serta Idle/Walk/Jog/Sprint dari `kids-mocap.glb` (UAL1, rangka yang sama dengan nama tulang Rigify yang ditukar balik ke nama UAL2). Channel skala, tulang hujung jari dan channel yang tidak pernah bergerak dari rehat dibuang supaya fail kecil. Klip lain dalam pakej (bertani, kerusi, telefon dan lain-lain) tidak dimasukkan. `npm test` sahkan setiap klip yang digunakan ada dengan panjang yang betul, setiap klip ada root motion, dalam setiap tetingkap pukulan bahagian yang memukul memang sampai ke depan, setiap tulang Jai digerakkan oleh mannequin, mesh Jai kekal utuh dalam setiap gerak dan tangannya kekal dekat tangan mannequin, menggunakan kod game sebenar (GLTFLoader, AnimationMixer, skinning) tanpa WebGL.
+Skrip ambil mesh, rangka dan 25 klip dari UAL2 (bertarung, reaksi dan Idle_FoldArms_Loop untuk ejek), serta Idle/Walk/Jog/Sprint dari `kids-mocap.glb` (UAL1, rangka yang sama dengan nama tulang Rigify yang ditukar balik ke nama UAL2). Channel skala, tulang hujung jari dan channel yang tidak pernah bergerak dari rehat dibuang supaya fail kecil. Klip lain dalam pakej (baling, bertani, kerusi, telefon dan lain-lain) tidak dimasukkan. `npm test` sahkan setiap klip yang digunakan ada dengan panjang yang betul, setiap klip ada root motion, dalam setiap tetingkap pukulan bahagian yang memukul memang sampai ke depan, setiap tulang Jai digerakkan oleh mannequin, mesh Jai kekal utuh dalam setiap gerak dan tangannya kekal dekat tangan mannequin, menggunakan kod game sebenar (GLTFLoader, AnimationMixer, skinning) tanpa WebGL.
 
 `tests/jai-model.test.js` semak rangka penuh Jai (sampai ke jari dan tulang nafas), berat tulang, permukaan dan genggaman. Bina semula rig Jai dengan Blender:
 
@@ -68,11 +68,11 @@ Model Amir fighter (`amir-fighter.glb`, `amir-fighter.blend`, `scripts/refine-am
 
 ## Susun atur gaduh
 
-- `src/brawler.js`: logik tulen: panjang klip, setiap gerak (segmen klip, kos stamina, tetingkap pukulan, damage, knockback, root motion, prop), chain tetak, stamina, dan reaksi kawan latih (tersentak, jatuh, K.O., tahan, pecah tahan). Diuji dalam `tests/brawler.test.js`.
-- `src/wear.js`: pakaikan model Jai pada fighter: retarget setiap tulang (badan dan jari) dari mannequin, pinggul, nafas, dan soket kayu/tong di tangan Jai.
-- `src/fighter.js`: muat `fighter.glb`, klon untuk setiap watak, adun klip ikut masa dan berat yang game tetapkan setiap bingkai, root motion, nafas, kayu dan tong, titik pukulan dan sasaran.
+- `src/brawler.js`: logik tulen: panjang klip, setiap gerak (segmen klip, kos stamina, tetingkap pukulan, damage, knockback, root motion), chain hayun, ejek, stamina, dan reaksi kawan latih (tersentak, jatuh, K.O., tahan, pecah tahan). Diuji dalam `tests/brawler.test.js`.
+- `src/wear.js`: pakaikan model Jai pada fighter: retarget setiap tulang (badan dan jari) dari mannequin, pinggul dan nafas.
+- `src/fighter.js`: muat `fighter.glb`, klon untuk setiap watak, adun klip ikut masa dan berat yang game tetapkan setiap bingkai, root motion, nafas, titik pukulan dan sasaran.
 - `src/breath.js`: nafas: rentak, tahan nafas masa menyerang, hembus selepasnya, dan usaha yang naik dan reda
-- `src/brawler-view.js`: gelanggang, kamera sisi, joystick dan butang, semakan pukulan, kapur, kesan pukulan, reaksi dan K.O. kawan latih.
+- `src/brawler-view.js`: gelanggang, kamera sisi, joystick dan butang, semakan pukulan, kesan pukulan, reaksi dan K.O. kawan latih.
 - `scripts/build-fighter.mjs`: bina `fighter.glb`; `scripts/check-fighter.mjs`: semak rig dengan kod game.
 
 ## Cara watak dibina

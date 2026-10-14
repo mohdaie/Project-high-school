@@ -1,11 +1,13 @@
-// Jai's fight rules: every move is played from the Universal Animation Library
-// 2 clips in fighter.glb (Quaternius, CC0). Pure data and rules; fighter.js and
+// Jai's fight rules: a street fight, bare hands only. Every move is played from
+// the Universal Animation Library 2 clips in fighter.glb (Quaternius, CC0); the
+// library's sword swings become wild empty-hand swings and its shield moves a
+// shove and a shoulder barge. Pure data and rules; fighter.js and
 // brawler-view.js play and draw them.
 
 // Clip lengths in seconds (tests check them against the GLB).
 export const CLIPS = {
   Sword_Regular_A: .433, Sword_Regular_A_Rec: .967, Sword_Regular_B: .533, Sword_Regular_B_Rec: 1.033, Sword_Regular_C: 2, Sword_Regular_Combo: 3, Sword_Heavy_Combo: 4.333,
-  Sword_Dash: 1.567, Sword_Block: 1.233, Melee_Hook: .467, Melee_Hook_Rec: .6, OverhandThrow: 1.333, Shield_OneShot: .833, Shield_Dash: 1.1, Idle_Shield_Loop: 2.5,
+  Sword_Dash: 1.567, Sword_Block: 1.233, Melee_Hook: .467, Melee_Hook_Rec: .6, Idle_FoldArms_Loop: 2.5, Shield_OneShot: .833, Shield_Dash: 1.1, Idle_Shield_Loop: 2.5,
   Idle_Shield_Break: 1.067, Zombie_Scratch: 1.8, Slide_Start: .833, Slide_Loop: 2, Slide_Exit: .5, NinjaJump_Start: .967, NinjaJump_Idle_Loop: 2, NinjaJump_Land: 1.267,
   Hit_Knockback: .833, LayToIdle: 1.533, Idle_Loop: 2.5, Walk_Loop: 1.333, Jog_Fwd_Loop: .933, Sprint_Loop: .667
 };
@@ -19,35 +21,33 @@ export const segLen = s => (s.to - s.from) / s.speed + s.hold;
 
 // play: segments in order. dur: when the move ends (it may cut a long recovery
 // short; the view blends back to standing). rm: root motion scale.
-// prop: what Jai holds (kayu: a wooden stick, tong: a bin lid as a shield).
-// hit: window [from, to] in seconds, the striking part, damage, knockback (m)
-// and heavy (knocks down). throw: a piece of chalk leaves the hand at `at`.
-// reach: distance to the opponent where the hits land best; root motion
-// stops there and a start a little further out steps in to it.
+// hit: window [from, to] in seconds, the striking part (a fist, the left
+// shoulder or the right foot), damage, knockback (m) and heavy (knocks down).
+// reach: distance to the opponent where the hits land best; root motion stops
+// there and a start a little further out steps in to it. gain: stamina back.
 export const MOVES = {
-  slashA: { name: 'Tetak', cost: 6, prop: 'kayu', play: [seg('Sword_Regular_A'), seg('Sword_Regular_A_Rec')], dur: .9, rm: .6, chain: 'slashB', chainAt: .433, reach: 1.1,
-    hits: [{ t: [.19, .3], part: 'kayu', dmg: 5, knock: .15 }] },
-  slashB: { name: 'Tetak balik', cost: 7, prop: 'kayu', play: [seg('Sword_Regular_B'), seg('Sword_Regular_B_Rec')], dur: 1, rm: .6, chain: 'slashC', chainAt: .533, reach: 1.1,
-    hits: [{ t: [.22, .32], part: 'kayu', dmg: 6, knock: .2 }] },
-  slashC: { name: 'Tetak penamat', cost: 12, prop: 'kayu', play: [seg('Sword_Regular_C')], dur: 1.45, rm: .5, reach: 1.1,
-    hits: [{ t: [.1, .22], part: 'kayu', dmg: 5, knock: .1 }, { t: [.6, .74], part: 'kayu', dmg: 10, knock: .9, heavy: true }] },
+  swingA: { name: 'Hayun', cost: 6, play: [seg('Sword_Regular_A'), seg('Sword_Regular_A_Rec')], dur: .9, rm: .6, chain: 'swingB', chainAt: .433, reach: .8,
+    hits: [{ t: [.19, .32], part: 'handR', dmg: 5, knock: .15 }] },
+  swingB: { name: 'Hayun balik', cost: 7, play: [seg('Sword_Regular_B'), seg('Sword_Regular_B_Rec')], dur: 1, rm: .6, chain: 'swingC', chainAt: .533, reach: .8,
+    hits: [{ t: [.2, .33], part: 'handR', dmg: 6, knock: .2 }] },
+  swingC: { name: 'Hayun pusing', cost: 12, play: [seg('Sword_Regular_C')], dur: 1.45, rm: .5, reach: .8,
+    hits: [{ t: [.1, .25], part: 'handR', dmg: 5, knock: .1 }, { t: [.58, .72], part: 'handR', dmg: 10, knock: .9, heavy: true }] },
   hook: { name: 'Hook', cost: 8, play: [seg('Melee_Hook'), seg('Melee_Hook_Rec')], dur: .95, rm: .8, reach: 1.25,
-    hits: [{ t: [.2, .4], part: 'handR', dmg: 8, knock: .3 }] },
-  dash: { name: 'Terkam', cost: 14, prop: 'kayu', play: [seg('Sword_Dash')], dur: 1.3, rm: .5, reach: 1.3,
-    hits: [{ t: [.24, .38], part: 'kayu', dmg: 10, knock: .6 }] },
-  combo: { name: 'Combo kayu', cost: 22, prop: 'kayu', play: [seg('Sword_Regular_Combo')], dur: 2.6, rm: .5, reach: 1.1,
-    hits: [{ t: [.19, .3], part: 'kayu', dmg: 5, knock: .1 }, { t: [.68, .8], part: 'kayu', dmg: 6, knock: .1 }, { t: [1.1, 1.27], part: 'kayu', dmg: 7, knock: .2 }, { t: [1.5, 1.65], part: 'kayu', dmg: 10, knock: .9, heavy: true }] },
-  heavy: { name: 'Combo berat', cost: 30, prop: 'kayu', play: [seg('Sword_Heavy_Combo')], dur: 3.7, rm: .3, reach: 1.2,
-    hits: [{ t: [.4, .54], part: 'kayu', dmg: 8, knock: .2 }, { t: [1.74, 1.9], part: 'kayu', dmg: 9, knock: .3 }, { t: [2.52, 2.7], part: 'kayu', dmg: 15, knock: 1, heavy: true }] },
-  throw: { name: 'Baling kapur', cost: 10, play: [seg('OverhandThrow')], dur: 1.1, reach: 3,
-    throw: { at: .38, dmg: 6, speed: 11, knock: .2 }, hits: [] },
-  bash: { name: 'Hentak tong', cost: 8, prop: 'tong', play: [seg('Shield_OneShot')], dur: .75, reach: .75,
-    hits: [{ t: [.04, .22], part: 'tong', dmg: 6, knock: .6 }] },
-  shieldDash: { name: 'Rempuh tong', cost: 14, prop: 'tong', play: [seg('Shield_Dash')], dur: 1.05, rm: .9, reach: .7,
-    hits: [{ t: [.06, .55], part: 'tong', dmg: 9, knock: 1.2, heavy: true }] },
+    hits: [{ t: [.2, .5], part: 'handR', dmg: 8, knock: .3 }] },
+  dash: { name: 'Terkam', cost: 14, play: [seg('Sword_Dash')], dur: 1.3, rm: .5, reach: .8,
+    hits: [{ t: [.22, .38], part: 'handR', dmg: 10, knock: .6 }] },
+  combo: { name: 'Combo jalanan', cost: 22, play: [seg('Sword_Regular_Combo')], dur: 2.6, rm: .5, reach: .8,
+    hits: [{ t: [.19, .32], part: 'handR', dmg: 5, knock: .1 }, { t: [.66, .8], part: 'handR', dmg: 6, knock: .1 }, { t: [1.1, 1.27], part: 'handR', dmg: 7, knock: .2 }, { t: [1.48, 1.64], part: 'handR', dmg: 10, knock: .9, heavy: true }] },
+  rage: { name: 'Mengamuk', cost: 30, play: [seg('Sword_Heavy_Combo')], dur: 3.7, rm: .3, reach: .9,
+    hits: [{ t: [.38, .54], part: 'handR', dmg: 8, knock: .2 }, { t: [1.72, 1.88], part: 'handR', dmg: 9, knock: .3 }, { t: [2.5, 2.7], part: 'handR', dmg: 15, knock: 1, heavy: true }] },
+  taunt: { name: 'Ejek', cost: 0, gain: 25, play: [seg('Idle_FoldArms_Loop', { to: 1.4 })], dur: 1.4, hits: [] },
+  shove: { name: 'Tolak', cost: 6, play: [seg('Shield_OneShot')], dur: .75, reach: .55,
+    hits: [{ t: [.03, .22], part: 'handL', dmg: 4, knock: .9 }] },
+  barge: { name: 'Rempuh bahu', cost: 14, play: [seg('Shield_Dash')], dur: 1.05, rm: .9, reach: .6,
+    hits: [{ t: [.06, .55], part: 'shoulderL', dmg: 9, knock: 1.2, heavy: true }] },
   scratch: { name: 'Cakar', cost: 8, play: [seg('Zombie_Scratch')], dur: 1.35, reach: .8,
     hits: [{ t: [.5, .7], part: 'handR', dmg: 7, knock: .25 }] },
-  slide: { name: 'Gelongsor', cost: 12, play: [seg('Slide_Start'), seg('Slide_Exit')], dur: 1.333, rm: .45, reach: .8,
+  sweep: { name: 'Sapu kaki', cost: 12, play: [seg('Slide_Start'), seg('Slide_Exit')], dur: 1.333, rm: .45, reach: .8,
     hits: [{ t: [.2, .9], part: 'footR', dmg: 8, knock: .7, heavy: true }] },
   jump: { name: 'Lompat', cost: 6, play: [seg('NinjaJump_Start', { speed: 1.3 }), seg('NinjaJump_Idle_Loop', { to: .2 }), seg('NinjaJump_Land', { speed: 1.3 })], dur: 1.6, hits: [] }
 };
@@ -57,8 +57,8 @@ export const REACT = {
   flinch: { play: [seg('Hit_Knockback', { to: .25 })], rm: .1 },
   down: { play: [seg('Hit_Knockback'), seg('Hit_Knockback', { from: .833, hold: .5 }), seg('LayToIdle')], rm: .4 },
   ko: { play: [seg('Hit_Knockback'), seg('Hit_Knockback', { from: .833, hold: 1.3 }), seg('LayToIdle')], rm: .5 },
-  block: { play: [seg('Sword_Block', { from: .05, to: .7 })], rm: 1, prop: 'tong' },
-  break: { play: [seg('Idle_Shield_Break')], rm: 1, prop: 'tong' }
+  block: { play: [seg('Sword_Block', { from: .05, to: .7 })], rm: 1 },
+  break: { play: [seg('Idle_Shield_Break')], rm: 1 }
 };
 for (const m of [...Object.values(MOVES), ...Object.values(REACT)]) { m.rm ??= 1; m.dur ??= m.play.reduce((s, p) => s + segLen(p), 0); }
 
@@ -73,12 +73,12 @@ export function frame(m, t) {
 }
 
 // Four buttons, like a pad's face buttons; the stick direction picks the variant.
-//   square   tetak: tetak chain · forward: terkam · back: hook
-//   triangle berat: combo berat · forward: combo kayu · back: baling kapur
-//   circle   tong:  hentak tong · forward: rempuh tong · back: cakar
-//   cross    tahan: hold to guard · forward: gelongsor · back: lompat
-export const BUTTONS = { tetak: 'square', berat: 'triangle', tong: 'circle', tahan: 'cross' };
-const PICK = { tetak: ['hook', 'slashA', 'dash'], berat: ['throw', 'heavy', 'combo'], tong: ['scratch', 'bash', 'shieldDash'], tahan: ['jump', null, 'slide'] };
+//   square   tumbuk: hayun chain · forward: terkam · back: hook
+//   triangle berat:  mengamuk · forward: combo jalanan · back: ejek
+//   circle   kasar:  tolak · forward: rempuh bahu · back: cakar
+//   cross    tahan:  hold to guard · forward: sapu kaki · back: lompat
+export const BUTTONS = { tumbuk: 'square', berat: 'triangle', kasar: 'circle', tahan: 'cross' };
+const PICK = { tumbuk: ['hook', 'swingA', 'dash'], berat: ['taunt', 'rage', 'combo'], kasar: ['scratch', 'shove', 'barge'], tahan: ['jump', null, 'sweep'] };
 export const pick = (button, dir = 0) => PICK[button]?.[Math.sign(dir) + 1] ?? null;
 export const STAMINA = { max: 100, regen: 24, rest: .45 };
 
@@ -86,12 +86,12 @@ export const STAMINA = { max: 100, regen: 24, rest: .45 };
 export const newFighter = ({ tireless = false } = {}) => ({ move: null, t: 0, seq: 0, stamina: STAMINA.max, rest: 0, queued: null, guard: false, tireless });
 function start(f, key) { f.move = key; f.t = 0; f.seq++; f.queued = null; if (!f.tireless) f.stamina -= MOVES[key].cost; f.rest = STAMINA.rest; return { move: key }; }
 // Press a button. dir: the stick toward the opponent (1), away (-1) or neither (0).
-// Tapping tetak again during a tetak queues the next one in the chain.
+// Tapping tumbuk again during a swing queues the next one in the chain.
 export function press(f, button, dir = 0) {
   const key = pick(button, dir); if (!key) return null;
   if (f.move) {
     const m = MOVES[f.move];
-    if (key === 'slashA' && m.chain && !f.queued) { f.queued = m.chain; return { queued: m.chain }; }
+    if (key === 'swingA' && m.chain && !f.queued) { f.queued = m.chain; return { queued: m.chain }; }
     return null;
   }
   if (!f.tireless && f.stamina < MOVES[key].cost) return { fail: 'penat' };
@@ -103,7 +103,7 @@ export function tick(f, dt) {
   if (f.move) {
     const m = MOVES[f.move]; f.t += dt;
     if (f.queued && f.t >= m.chainAt) { const q = f.queued; f.queued = null; if (f.tireless || f.stamina >= MOVES[q].cost) { start(f, q); started = q; } }
-    else if (f.t >= m.dur) { f.move = null; f.t = 0; f.queued = null; }
+    else if (f.t >= m.dur) { if (m.gain) f.stamina = Math.min(STAMINA.max, f.stamina + m.gain); f.move = null; f.t = 0; f.queued = null; }
   } else if ((f.rest -= dt) < 0) { f.stamina = Math.min(STAMINA.max, f.stamina + STAMINA.regen * Math.min(dt, -f.rest) * (f.guard ? .5 : 1)); f.rest = 0; }
   return started;
 }

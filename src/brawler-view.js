@@ -1,5 +1,5 @@
 import * as T from 'three';
-import { inkViewport, toon } from './illustration.js';
+import { inkViewport } from './illustration.js';
 import { newBreath, breathe } from './breath.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { loadFighter, createFighter, PARTS, TARGETS } from './fighter.js?v=0.6.0';
@@ -33,7 +33,7 @@ const glbText = window.GLB_TXT ? url => fetch(url.replace(/(\?|$)/, '.txt$1')).t
 // ---- input: keyboard, a floating stick on the left, buttons on the right
 const keys = new Set(), stick = { id: null, x: 0, y: 0, ox: 0, oy: 0 };
 // Keyboard face buttons sit in the same diamond: I triangle, J square, L circle, K cross.
-const KEYMAP = { KeyJ: 'tetak', KeyI: 'berat', KeyL: 'tong', KeyK: 'tahan', Space: 'tahan' };
+const KEYMAP = { KeyJ: 'tumbuk', KeyI: 'berat', KeyL: 'kasar', KeyK: 'tahan', Space: 'tahan' };
 addEventListener('keydown', e => { if (e.repeat) return; keys.add(e.code); if (KEYMAP[e.code]) act(KEYMAP[e.code]); audio(); });
 addEventListener('keyup', e => keys.delete(e.code));
 let guardHeld = false;
@@ -73,7 +73,7 @@ function act(button) {
 const ASSIST = .9;
 function begin(key) {
   const m = MOVES[key]; pop(m.name); me.assist = 0;
-  const first = m.hits[0]?.t[0] ?? m.throw?.at; if (first === undefined || m.throw) return;
+  const first = m.hits[0]?.t[0]; if (first === undefined) return;
   const gap = me.pos.distanceTo(foe.pos) - m.reach;
   if (gap > 0 && gap < ASSIST) { me.assist = gap / first; me.assistUntil = first; }
 }
@@ -134,24 +134,6 @@ function checkHits(d) {
   // Keep every part's points for the next frame's sweep.
   for (const p of Object.keys(PARTS)) me.prev[p] = cur[p] ?? jai.strike(p);
 }
-// Thrown chalk: an arc from the hand.
-const chalks = [], chalkGeo = new T.CylinderGeometry(.015, .015, .09, 8), chalkMat = toon(0xf4f1e8);
-// It leaves Jai's own hand and arcs onto the partner's chest.
-const GRAVITY = 6;
-function throwChalk(d) {
-  const c = MOVES.throw.throw, mesh = new T.Mesh(chalkGeo, chalkMat); mesh.position.copy(jai.strike('handR', 1, true)[0]); scene.add(mesh);
-  const aim = foe.fig.point('chest', new T.Vector3()).sub(mesh.position), fly = Math.max(.08, aim.length() / c.speed);
-  chalks.push({ mesh, v: aim.divideScalar(fly).setY(aim.y + GRAVITY * fly / 2), prev: mesh.position.clone(), life: 1.5, hit: { dmg: c.dmg, knock: c.knock } });
-}
-function flyChalk(dt, d) {
-  for (let i = chalks.length - 1; i >= 0; i--) {
-    const c = chalks[i]; c.prev.copy(c.mesh.position); c.v.y -= GRAVITY * dt; c.mesh.position.addScaledVector(c.v, dt); c.mesh.rotation.x += dt * 25; c.life -= dt;
-    const zone = floored(foe.s) ? null : touch([c.mesh.position], [c.prev], .03);
-    if (zone) land(c.hit, d, c.mesh.position.clone());
-    if (zone || c.life < 0 || c.mesh.position.y < 0) { scene.remove(c.mesh); chalks.splice(i, 1); }
-  }
-}
-
 // ---- loop
 // Top speeds at full stick; a light push walks. Speed rises with the push.
 const SPEED = { fwd: 3.4, back: 1.8, side: 2.2, guard: .8 }, DEAD = .12;
@@ -180,20 +162,19 @@ function step(dt) {
   }
   me.vel.lerp(want, 1 - Math.exp(-dt * 10)); me.pos.addScaledVector(me.vel, dt);
   me.yaw = Math.atan2(d.x, d.z);
-  const t0 = me.f.t, started = tick(me.f, dt); if (started) begin(started);
+  const started = tick(me.f, dt); if (started) begin(started);
   const m = me.f.move && MOVES[me.f.move];
   if (m) {
     // Root motion carries Jai in, but never closer than the move's reach.
     const s0 = me.pos.distanceTo(foe.pos); travel(me, jai, m, me.f.t, me.f.seq, me.yaw);
     const s1 = me.pos.distanceTo(foe.pos); if (m.reach && s1 < s0 && s1 < m.reach) me.pos.addScaledVector(d, -Math.min(s0 - s1, m.reach - s1));
     if (me.assist && me.f.t <= me.assistUntil + dt) me.pos.addScaledVector(d, me.assist * dt);
-    if (m.throw && t0 < m.throw.at && me.f.t >= m.throw.at && !started) throwChalk(d);
   }
   const speed = me.vel.length() * (me.vel.dot(d) < -.1 ? -1 : 1);
-  const breath = breathe(me.breath, dt, { moving: Math.min(1, me.vel.length() / SPEED.fwd), attacking: !!m });
+  const breath = breathe(me.breath, dt, { moving: Math.min(1, me.vel.length() / SPEED.fwd), attacking: !!m && !m.gain });
   jai.group.position.copy(me.pos); jai.group.rotation.y = me.yaw;
-  jai.drive(dt, { m, t: me.f.t, speed, guard: me.f.guard, breath, prop: m?.prop });
-  checkHits(d); flyChalk(dt, d);
+  jai.drive(dt, { m, t: me.f.t, speed, guard: me.f.guard, breath });
+  checkHits(d);
   // Partner
   const was = foe.s.react, up = settle(foe.s, dt);
   if (up === 'ko') pop('Bangun!');
@@ -211,7 +192,7 @@ function step(dt) {
   if (foe.s.react) foe.breath.effort = Math.min(1, foe.breath.effort + dt * 2);
   foe.flash *= Math.exp(-dt * 14);
   foe.fig.group.position.copy(foe.pos); foe.fig.group.rotation.y = foe.yaw;
-  foe.fig.drive(dt, { m: r, t: foe.s.t, guard: foe.s.guard && !r, breath: breathe(foe.breath, dt), prop: r?.prop });
+  foe.fig.drive(dt, { m: r, t: foe.s.t, guard: foe.s.guard && !r, breath: breathe(foe.breath, dt) });
   foe.fig.flash(foe.flash * .5);
   // Camera: side on, Jai left, pulled back as they separate.
   const mid = v3.addVectors(me.pos, foe.pos).multiplyScalar(.5);

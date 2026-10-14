@@ -7,7 +7,7 @@ import { toon, outline } from './illustration.js';
 // fixed correction from his T-posed bind: Qjai = Qmann · Qmann_rest⁻¹ · B ·
 // Qjai_bind, where B turns the bone's bind direction onto the mannequin's rest
 // direction. Fingers follow the clips' grips; the hips travel scaled to his
-// legs. Hits are judged on the mannequin; kayu, tong and chalk sit in his hands.
+// legs. Hits are judged on the mannequin, whose hands stay close to his.
 const BODY = { pelvis: 'hips', spine_01: 'spine001', spine_02: 'spine002', spine_03: 'spine003', neck_01: 'neck', Head: 'head' };
 const LIMB = { clavicle: 'shoulder', upperarm: 'upper_arm', lowerarm: 'forearm', hand: 'hand', thigh: 'thigh', calf: 'shin', foot: 'foot', ball: 'toe' };
 const FING = { index: 'f_index', middle: 'f_middle', pinky: 'f_pinky', ring: 'f_ring', thumb: 'thumb' };
@@ -39,16 +39,15 @@ export function wear(fighter, gltf, scene, scale = 1) {
   // Parents before children, as the traverse found them.
   const hips = jai('hips'), pelvis = fighter.bone('pelvis'), hipsAt = w(hips), pelvisAt = w(pelvis);
   const leg = (a, b, c) => w(a).distanceTo(w(b)) + w(b).distanceTo(w(c)), k = leg(jai('thighL'), jai('shinL'), jai('footL')) / leg(fighter.bone('thigh_l'), fighter.bone('calf_l'), fighter.bone('foot_l'));
-  // Sockets: the mannequin hand's frame inside Jai's hand, for the props and the chalk.
+  // Sockets: the mannequin hand's frame inside Jai's hand (`seen` strike points).
   const sockets = {};
   for (const [m, j] of [['hand_r', 'handR'], ['hand_l', 'handL']]) { const s = new T.Group(), p = pairs.find(p => p.m.name === m); s.quaternion.copy(wq(jai(j)).invert().multiply(wq(p.m))); s.scale.setScalar(1 / scale); jai(j).add(s); sockets[m] = s; }
   const lungs = Object.entries(ex.breath ?? {}).map(([n, v]) => ({ o: jai(n), v }));
   const bodies = []; fighter.model.traverse(o => { if (o.isSkinnedMesh) bodies.push(o); });
-  const home = { kayu: 'hand_r', tong: 'hand_l' }, qP = new T.Quaternion(), v = new T.Vector3();
+  const qP = new T.Quaternion(), v = new T.Vector3();
   let on = false;
   function show(x) {
     on = x; group.visible = x; for (const b of bodies) b.visible = !x;
-    for (const [n, p] of Object.entries(fighter.props)) (x ? sockets[home[n]] : fighter.bone(home[n])).add(p);
     fighter.hold = n => x && sockets[n] ? { bone: sockets[n], s: 1 } : { bone: fighter.bone(n), s: 1 };
   }
   fighter.worn = (dt, breath = 0) => {

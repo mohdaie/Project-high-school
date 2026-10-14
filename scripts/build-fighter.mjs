@@ -9,7 +9,7 @@ if (!out) { console.error('usage: build-fighter.mjs UAL2_Standard_RM.glb kids-mo
 
 const CLIPS = {
   ual2: ['Sword_Regular_A', 'Sword_Regular_A_Rec', 'Sword_Regular_B', 'Sword_Regular_B_Rec', 'Sword_Regular_C', 'Sword_Regular_Combo', 'Sword_Heavy_Combo', 'Sword_Dash', 'Sword_Block',
-    'Melee_Hook', 'Melee_Hook_Rec', 'OverhandThrow', 'Shield_OneShot', 'Shield_Dash', 'Idle_Shield_Loop', 'Idle_Shield_Break', 'Zombie_Scratch',
+    'Melee_Hook', 'Melee_Hook_Rec', 'Idle_FoldArms_Loop', 'Shield_OneShot', 'Shield_Dash', 'Idle_Shield_Loop', 'Idle_Shield_Break', 'Zombie_Scratch',
     'Slide_Start', 'Slide_Loop', 'Slide_Exit', 'NinjaJump_Start', 'NinjaJump_Idle_Loop', 'NinjaJump_Land', 'Hit_Knockback', 'LayToIdle'],
   ual1: ['Idle_Loop', 'Walk_Loop', 'Jog_Fwd_Loop', 'Sprint_Loop']
 };

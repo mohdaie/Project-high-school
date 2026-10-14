@@ -12,11 +12,10 @@ export const FIGHTER_URL = new URL('../assets/models/fighter.glb', import.meta.u
 export const loadFighter = (url = FIGHTER_URL, parse) => parse ? parse(url) : new GLTFLoader().loadAsync(url);
 
 // Strike parts: a point (or a segment a..b) in a bone's space, and a radius.
-// The kayu runs out of the fist along the thumb side (hand +z).
+// Bare hands only: fists, the left shoulder for a barge, the right foot.
 export const PARTS = {
-  kayu: { bone: 'hand_r', a: [0, .08, .12], b: [0, .08, .84], r: .04 },
   handR: { bone: 'hand_r', a: [0, .08, 0], r: .06 }, handL: { bone: 'hand_l', a: [0, .08, 0], r: .06 },
-  tong: { bone: 'hand_l', a: [-.09, .07, 0], r: .24 },
+  shoulderL: { bone: 'upperarm_l', a: [0, .05, 0], r: .14 },
   footR: { bone: 'ball_r', a: [0, 0, 0], r: .08 }, footL: { bone: 'ball_l', a: [0, 0, 0], r: .08 }
 };
 // Where a fighter can be hit: centre, radius, zone.
@@ -50,15 +49,6 @@ export function createFighter(scene, gltf, { body = 0xd9a36c, joint = 0x5b3a28 }
     const s = m.play[f.i]; return out.add(rootAt(s.clip, f.time, v1)).sub(rootAt(s.clip, s.from, v2));
   }
 
-  // Props
-  const wood = toon(0x9a6a3c), metal = toon(0x9aa3ad), tape = toon(0x2b2b33);
-  const kayu = new T.Group(), stick = new T.Mesh(new T.BoxGeometry(.04, .04, .78), wood), grip = new T.Mesh(new T.BoxGeometry(.05, .05, .16), tape);
-  stick.position.z = .43; grip.position.z = .03; kayu.add(stick, grip); kayu.position.set(0, .08, 0); bone('hand_r').add(kayu);
-  const tong = new T.Group(), lid = new T.Mesh(new T.CylinderGeometry(.26, .27, .035, 22), metal), knob = new T.Mesh(new T.BoxGeometry(.12, .03, .04), metal);
-  knob.position.y = .03; tong.add(lid, knob); tong.rotation.z = Math.PI / 2; tong.position.set(-.07, .07, 0); bone('hand_l').add(tong);
-  const props = { kayu, tong }, wantProp = { kayu: 0, tong: 0 };
-  for (const p of Object.values(props)) { p.traverse(o => { if (o.isMesh) { o.castShadow = true; outline(o, 1.6); } }); p.scale.setScalar(.001); p.visible = false; }
-
   // Blending: the current move, frozen poses fading out, and the standing loops.
   const fades = []; let last = null, moveW = 0;
   const loco = { phase: 0, idle: 0, guard: 0, guardW: 0 };
@@ -67,7 +57,7 @@ export function createFighter(scene, gltf, { body = 0xd9a36c, joint = 0x5b3a28 }
 
   // m: the move (or reaction) playing, t its time; speed: ground speed (m/s,
   // negative when backing off); guard: covering up; breath: -1..1.
-  function drive(dt, { m = null, t = 0, speed = 0, guard = false, breath = 0, prop = null } = {}) {
+  function drive(dt, { m = null, t = 0, speed = 0, guard = false, breath = 0 } = {}) {
     const w = {};
     if (m) {
       const f = frame(m, t), cur = { m, i: f.i, clip: f.clip, time: f.time };
@@ -103,11 +93,6 @@ export function createFighter(scene, gltf, { body = 0xd9a36c, joint = 0x5b3a28 }
     // Breath on top: the chest lifts and opens.
     group.updateMatrixWorld(true); lateral.set(1, 0, 0).applyQuaternion(group.quaternion);
     for (const [b, k] of breathBones) { b.getWorldQuaternion(qA).invert(); b.rotateOnAxis(v1.copy(lateral).applyQuaternion(qA), k * breath); }
-    // Props grow into the hand and shrink away.
-    for (const [n, p] of Object.entries(props)) {
-      wantProp[n] = T.MathUtils.clamp(wantProp[n] + (prop === n || (n === 'tong' && guard) ? dt : -dt) / .12, 0, 1);
-      p.visible = wantProp[n] > .01; p.scale.setScalar(Math.max(.001, wantProp[n]) * fighter.propScale);
-    }
     group.updateMatrixWorld(true);
     fighter.worn?.(dt, breath);
   }
@@ -125,7 +110,7 @@ export function createFighter(scene, gltf, { body = 0xd9a36c, joint = 0x5b3a28 }
   }
   const flash = v => { for (const m of Object.values(mats)) m.emissive.setScalar(v); };
   // Another body can wear the fighter (wear.js): `hold` then gives the bone a
-  // strike part or prop follows, with the scale of that bone's units.
-  const fighter = { group, model, bone, mixer, actions, drive, path, rootAt, point, strike, flash, props, len, hold: n => ({ bone: bone(n), s: 1 }), propScale: 1, worn: null };
+  // strike part follows on that body, with the scale of that bone's units.
+  const fighter = { group, model, bone, mixer, actions, drive, path, rootAt, point, strike, flash, len, hold: n => ({ bone: bone(n), s: 1 }), worn: null };
   return fighter;
 }
