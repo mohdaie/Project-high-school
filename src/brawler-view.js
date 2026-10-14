@@ -3,12 +3,11 @@ import { inkViewport, toon } from './illustration.js';
 import { newBreath, breathe } from './breath.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { loadFighter, createFighter, PARTS, TARGETS } from './fighter.js?v=0.6.0';
-import { loadRig, loadModel, createActor } from './actor.js';
 import { wear } from './wear.js?v=0.6.0';
 import { MOVES, REACT, newFighter, press, tick, activeHits, newTarget, receive, settle, floored } from './brawler.js?v=0.6.0';
 
 // Training ring: Jai against a sparring partner who takes the hits. Both are
-// the UAL2 mannequin; Jai wears Amir's model over his. Camera from the side, Jai on the left. Stick: right =
+// the UAL2 mannequin; Jai wears his own model over his. Camera from the side, Jai on the left. Stick: right =
 // toward the partner, left = back off, up/down = step round him.
 const $ = id => document.getElementById(id);
 const canvas = $('view'), renderer = new T.WebGLRenderer({ canvas, antialias: true });
@@ -45,7 +44,7 @@ for (const b of document.querySelectorAll('#pad button')) {
 }
 const base = $('stick'), knob = $('knob');
 $('tiredBtn').onclick = () => { me.f.tireless = !me.f.tireless; me.f.stamina = 100; $('tiredBtn').textContent = me.f.tireless ? 'Penat: tak' : 'Penat: ya'; $('stamWrap').hidden = me.f.tireless; };
-$('modelBtn').onclick = () => { if (amir) { amir.show(!amir.on); $('modelBtn').textContent = amir.on ? 'Watak: Jai' : 'Watak: mannequin'; } };
+$('modelBtn').onclick = () => { if (skin) { skin.show(!skin.on); $('modelBtn').textContent = skin.on ? 'Watak: Jai' : 'Watak: mannequin'; } };
 $('guardBtn').onclick = () => { foe.s.guard = !foe.s.guard; $('guardBtn').textContent = foe.s.guard ? 'Kawan: tahan' : 'Kawan: terbuka'; };
 $('listBtn').onclick = () => { const l = $('list'); l.hidden = !l.hidden; $('listBtn').setAttribute('aria-expanded', !l.hidden); };
 canvas.addEventListener('pointerdown', e => { if (stick.id !== null || e.clientX > innerWidth * .5) return; audio(); stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY; canvas.setPointerCapture(e.pointerId); base.hidden = false; base.style.transform = `translate(${e.clientX - 60}px,${e.clientY - 60}px)`; moveStick(e); });
@@ -164,10 +163,9 @@ function travel(o, fig, m, t, key, yaw) {
   const c = Math.cos(yaw), s = Math.sin(yaw);
   o.pos.x += (dx * c + dz * s) * m.rm; o.pos.z += (-dx * s + dz * c) * m.rm;
 }
-let jai = null, amir = null;
-// Amir's model (from Malaysian-retro-game, refined in Blender) is a 1.5 m
-// child; scaled toward the mannequin's height so the reach matches.
-const AMIR_SCALE = 1.17, fighterModel = new URL('../assets/models/amir-fighter.glb', import.meta.url).href;
+let jai = null, skin = null;
+// Jai's own model: the schoolboy from the reference picture, 1.75 m, rigged in Blender.
+const JAI_URL = new URL('../assets/models/jai-fighter.glb', import.meta.url).href;
 function step(dt) {
   now += dt;
   d.subVectors(foe.pos, me.pos).setY(0); const sep = d.length(); d.normalize(); n.set(-d.z, 0, d.x);
@@ -231,10 +229,10 @@ function step(dt) {
 function resize() { inkViewport.set(innerWidth, innerHeight); renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 1 ? 62 : 42; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 const debug = { paused: false };
-Promise.all([loadFighter(undefined, glbText), Promise.all([loadRig(undefined, glbText), loadModel(fighterModel, glbText)]).catch(e => { console.warn('Amir unavailable', e); return null; })]).then(([gltf, look]) => {
+Promise.all([loadFighter(undefined, glbText), loadFighter(JAI_URL, glbText).catch(e => { console.warn('Jai unavailable', e); return null; })]).then(([gltf, jaiModel]) => {
   jai = createFighter(scene, gltf, { body: 0xd9a36c, joint: 0x5b3a28 });
   foe.fig = createFighter(scene, gltf, { body: 0x8fa3b8, joint: 0x3e4a5c });
-  if (look) amir = wear(jai, createActor(scene, 0, 0, 'amir', ...look), AMIR_SCALE);
+  if (jaiModel) skin = wear(jai, jaiModel, scene);
   else $('modelBtn').hidden = true;
   let last = performance.now();
   renderer.setAnimationLoop(() => {
@@ -244,5 +242,5 @@ Promise.all([loadFighter(undefined, glbText), Promise.all([loadRig(undefined, gl
   });
   step(0); $('loading').hidden = true;
   // For automated checks: run frames and press buttons without a real clock.
-  window.brawler = { act, step, me, foe, debug, jai, get amir() { return amir; }, input, render: () => renderer.render(scene, camera), set stick(v) { stick.x = v[0]; stick.y = v[1]; } };
+  window.brawler = { act, step, me, foe, debug, jai, get skin() { return skin; }, input, render: () => renderer.render(scene, camera), set stick(v) { stick.x = v[0]; stick.y = v[1]; } };
 }).catch(e => { console.error(e); $('loading').textContent = 'Gagal muat watak. Cuba muat semula.'; });

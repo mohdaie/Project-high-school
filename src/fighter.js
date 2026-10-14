@@ -109,7 +109,7 @@ export function createFighter(scene, gltf, { body = 0xd9a36c, joint = 0x5b3a28 }
       p.visible = wantProp[n] > .01; p.scale.setScalar(Math.max(.001, wantProp[n]) * fighter.propScale);
     }
     group.updateMatrixWorld(true);
-    fighter.worn?.(dt);
+    fighter.worn?.(dt, breath);
   }
 
   const points = { head: () => bone('Head').getWorldPosition(v1).add(v2.set(0, .1, 0)), chest: () => bone('spine_03').getWorldPosition(v1).add(v2.set(0, .08, 0)), hips: () => bone('pelvis').getWorldPosition(v1),
