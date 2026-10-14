@@ -21,7 +21,7 @@ Empat butang macam pad PS5. Arah joystick pilih variasi setiap butang.
 | □ Tumbuk | J | Jab. Tekan 3 kali: jab, straight, **hook** |
 | → □ | D + J | Hook |
 | ← □ | A + J | Uppercut |
-| △ Tendang | I | **Tendang tinggi** ke kepala (roundhouse) |
+| △ Tendang | I | **Tendang tinggi** ke kepala (roundhouse kaki belakang, ikut klip rujukan) |
 | → △ | D + I | Tendang tolak (teep) |
 | ← △ | A + I | Tendang bawah ke peha (low kick) |
 | ○ Kasar | L | Lutut |
@@ -31,6 +31,10 @@ Empat butang macam pad PS5. Arah joystick pilih variasi setiap butang.
 | ✕ + ↑ / ↓ | W / S + K | Elak kiri / kanan (slip) |
 | → ✕ | D + K | Tunduk (duck) |
 | ← ✕ | A + K | Undur (lompat ke belakang) |
+
+**Tendang tinggi (ikut klip rujukan).** Dibina semula bingkai demi bingkai daripada video rujukan pemilik projek (tendangan gaya Thai, kira-kira 1.1 s, dimampatkan jadi 0.9 s): langkah kecil untuk muatkan kaki depan, lutut belakang naik tinggi di depan dengan badan tegak dan tangan di muka, pinggul berpusing sampai lutut menghala ke sasaran, kaki dilibas lurus ke paras kepala sambil badan condong ke belakang (badan dan kaki satu garis) dan tumit kaki depan berpusing, kemudian ditarik balik ke lutut tinggi dan diletak semula ke kekuda. Kena pada 0.24 s hingga 0.4 s.
+
+![Tendang tinggi: rujukan (atas) dan Jai (bawah)](assets/previews/high-kick-vs-reference.jpg)
 
 Elak ada tetingkap `evade` (kepala keluar dari garis serangan) untuk lawan komputer nanti.
 

@@ -39,7 +39,7 @@ export const MOVES = {
   uppercut: street('Uppercut', 'Street_Uppercut', { cost: 10, reach: .6, hits: [{ t: [.16, .28], part: 'handL', dmg: 9, knock: .45 }] }),
   pushKick: street('Tendang tolak', 'Street_PushKick', { cost: 12, reach: .95, hits: [{ t: [.22, .36], part: 'footL', dmg: 8, knock: 1 }] }),
   lowKick: street('Tendang bawah', 'Street_LowKick', { cost: 10, reach: .9, hits: [{ t: [.15, .29], part: 'footR', dmg: 8, knock: .35 }] }),
-  highKick: street('Tendang tinggi', 'Street_HighKick', { cost: 16, reach: .7, hits: [{ t: [.26, .4], part: 'footR', dmg: 13, knock: .9, heavy: true }] }),
+  highKick: street('Tendang tinggi', 'Street_HighKick', { cost: 16, reach: .7, hits: [{ t: [.24, .4], part: 'footR', dmg: 14, knock: 1, heavy: true }] }),
   knee: street('Lutut', 'Street_Knee', { cost: 10, reach: .55, hits: [{ t: [.18, .32], part: 'kneeR', dmg: 10, knock: .5 }] }),
   barge: street('Rempuh bahu', 'Street_Barge', { cost: 14, reach: .5, hits: [{ t: [.24, .42], part: 'shoulderL', dmg: 8, knock: 1.5 }] }),
   taunt: street('Ejek', 'Street_Taunt', { cost: 0, gain: 25 }),
