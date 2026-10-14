@@ -12,10 +12,10 @@ export const FIGHTER_URL = new URL('../assets/models/fighter.glb', import.meta.u
 export const loadFighter = (url = FIGHTER_URL, parse) => parse ? parse(url) : new GLTFLoader().loadAsync(url);
 
 // Strike parts: a point (or a segment a..b) in a bone's space, and a radius.
-// Bare hands only: fists, the left shoulder for a barge, the right foot.
+// Bare hands only: fists, feet (the ball of each), the right knee and the left shoulder.
 export const PARTS = {
   handR: { bone: 'hand_r', a: [0, .08, 0], r: .06 }, handL: { bone: 'hand_l', a: [0, .08, 0], r: .06 },
-  shoulderL: { bone: 'upperarm_l', a: [0, .05, 0], r: .14 },
+  kneeR: { bone: 'calf_r', a: [0, 0, 0], r: .1 }, shoulderL: { bone: 'upperarm_l', a: [0, .05, 0], r: .14 },
   footR: { bone: 'ball_r', a: [0, 0, 0], r: .08 }, footL: { bone: 'ball_l', a: [0, 0, 0], r: .08 }
 };
 // Where a fighter can be hit: centre, radius, zone.

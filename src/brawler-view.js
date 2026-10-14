@@ -4,6 +4,7 @@ import { newBreath, breathe } from './breath.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { loadFighter, createFighter, PARTS, TARGETS } from './fighter.js?v=0.6.0';
 import { wear } from './wear.js?v=0.6.0';
+import { bakeStreet } from './pose.js?v=0.6.0';
 import { MOVES, REACT, newFighter, press, tick, activeHits, newTarget, receive, settle, floored } from './brawler.js?v=0.6.0';
 
 // Training ring: Jai against a sparring partner who takes the hits. Both are
@@ -33,7 +34,7 @@ const glbText = window.GLB_TXT ? url => fetch(url.replace(/(\?|$)/, '.txt$1')).t
 // ---- input: keyboard, a floating stick on the left, buttons on the right
 const keys = new Set(), stick = { id: null, x: 0, y: 0, ox: 0, oy: 0 };
 // Keyboard face buttons sit in the same diamond: I triangle, J square, L circle, K cross.
-const KEYMAP = { KeyJ: 'tumbuk', KeyI: 'berat', KeyL: 'kasar', KeyK: 'tahan', Space: 'tahan' };
+const KEYMAP = { KeyJ: 'tumbuk', KeyI: 'tendang', KeyL: 'kasar', KeyK: 'tahan', Space: 'tahan' };
 addEventListener('keydown', e => { if (e.repeat) return; keys.add(e.code); if (KEYMAP[e.code]) act(KEYMAP[e.code]); audio(); });
 addEventListener('keyup', e => keys.delete(e.code));
 let guardHeld = false;
@@ -61,10 +62,10 @@ function moveStick(e) {
 let popTimer = 0, combo = 0, comboAt = -9, now = 0;
 function pop(text, cls = '') { const p = $('pop'); p.textContent = text; p.className = cls; popTimer = .9; }
 // The stick toward the partner (1) or away (-1) picks each button's variant.
-const stickDir = () => { const x = input().x; return x > .45 ? 1 : x < -.45 ? -1 : 0; };
+const stickDir = () => { const x = input().x; return x > .45 ? 1 : x < -.45 ? -1 : 0; }, stickSide = () => { const y = input().y; return y > .45 ? 1 : y < -.45 ? -1 : 0; };
 function act(button) {
   if (!jai) return;
-  const r = press(me.f, button, stickDir());
+  const r = press(me.f, button, stickDir(), stickSide());
   if (r?.move) begin(r.move);
   else if (r?.fail === 'penat') pop('Penat!', 'warn');
 }
@@ -201,7 +202,9 @@ function step(dt) {
   camera.position.copy(camPos); if (shake > 0) { camera.position.x += (Math.random() - .5) * shake; camera.position.y += (Math.random() - .5) * shake; shake = Math.max(0, shake - dt); }
   camera.lookAt(look);
   // Close-up views for checks (window.brawler.debug.view = [back, side, height]).
-  if (debug.view) { const [a, b, h] = debug.view, c = me.pos.clone().lerp(foe.pos, .5).setY(1); camera.position.copy(c).addScaledVector(d, a).addScaledVector(n, b).setY(h); camera.lookAt(c); }
+  // A fixed camera in Jai's own space: debug.at = [[x, y, z], [x, y, z]] (eye, target).
+  if (debug.at) { const w = v => new T.Vector3(...v).applyAxisAngle(T.Object3D.DEFAULT_UP, me.yaw).add(me.pos); camera.position.copy(w(debug.at[0])); camera.lookAt(w(debug.at[1])); }
+  else if (debug.view) { const [a, b, h] = debug.view, c = me.pos.clone().lerp(foe.pos, .5).setY(1); camera.position.copy(c).addScaledVector(d, a).addScaledVector(n, b).setY(h); camera.lookAt(c); }
   // HUD
   $('stam').style.width = `${me.f.stamina}%`; $('stam').classList.toggle('low', me.f.stamina < 20); $('hp').style.width = `${foe.s.hp}%`;
   if (popTimer > 0 && (popTimer -= dt) <= 0) $('pop').textContent = '';
@@ -211,6 +214,7 @@ function resize() { inkViewport.set(innerWidth, innerHeight); renderer.setSize(i
 addEventListener('resize', resize); resize();
 const debug = { paused: false };
 Promise.all([loadFighter(undefined, glbText), loadFighter(JAI_URL, glbText).catch(e => { console.warn('Jai unavailable', e); return null; })]).then(([gltf, jaiModel]) => {
+  bakeStreet(gltf);
   jai = createFighter(scene, gltf, { body: 0xd9a36c, joint: 0x5b3a28 });
   foe.fig = createFighter(scene, gltf, { body: 0x8fa3b8, joint: 0x3e4a5c });
   if (jaiModel) skin = wear(jai, jaiModel, scene);

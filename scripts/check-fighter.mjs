@@ -8,14 +8,14 @@ globalThis.ProgressEvent = class { constructor(type, init) { this.type = type; O
 globalThis.self = {}; globalThis.document = { createElement: canvas };
 const T = await import('three'), { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
 const { createFighter, PARTS } = await import('../src/fighter.js'), { CLIPS, MOVES, REACT } = await import('../src/brawler.js');
-const { wear, modelName } = await import('../src/wear.js');
+const { wear, modelName } = await import('../src/wear.js'), { bakeStreet } = await import('../src/pose.js'), { STANCE } = await import('../src/street.js');
 async function parse(file, untextured) {
   const b = readFileSync(new URL('../assets/models/' + file, import.meta.url)), n = b.readUInt32LE(12), j = JSON.parse(b.subarray(20, 20 + n));
   j.buffers[0].uri = 'data:application/octet-stream;base64,' + b.subarray(28 + n).toString('base64');
   if (untextured) { delete j.images; delete j.textures; for (const m of j.materials ?? []) if (m.pbrMetallicRoughness) delete m.pbrMetallicRoughness.baseColorTexture; }
   return new GLTFLoader().parseAsync(JSON.stringify(j), '');
 }
-const gltf = await parse('fighter.glb');
+const gltf = bakeStreet(await parse('fighter.glb'));
 for (const [name, len] of Object.entries(CLIPS)) { const c = gltf.animations.find(a => a.name === name); assert.ok(c, 'missing clip ' + name); assert.ok(Math.abs(c.duration - len) < .002, `${name} lasts ${c.duration}`); }
 const fig = createFighter(new T.Scene(), gltf), p = new T.Vector3();
 let checked = 0;
@@ -26,11 +26,11 @@ for (const [key, m] of Object.entries({ ...MOVES, ...REACT })) {
     for (const b of Object.values(fig.model.children[0].children)) b.traverse(o => { if (o.isBone) assert.ok(o.matrixWorld.elements.every(Number.isFinite), key); });
     checked++;
   }
-  // The strike part sweeps out in front (+z), at or below head height, at some
-  // point in each window.
+  // The strike part sweeps out in front (+z, counting the move's own travel),
+  // at or below head height, at some point in each window.
   for (const h of m.hits ?? []) {
     let best = -9;
-    for (let t = h.t[0]; t <= h.t[1]; t += 1 / 60) { fig.drive(1, { m, t }); for (const q of fig.strike(h.part)) if (q.y < 2.1) best = Math.max(best, q.z); }
+    for (let t = h.t[0]; t <= h.t[1]; t += 1 / 60) { fig.drive(1, { m, t }); const go = fig.path(m, t, p).z * m.rm; for (const q of fig.strike(h.part)) if (q.y < 2.1) best = Math.max(best, q.z + go); }
     assert.ok(best + PARTS[h.part].r > .45, `${key} at ${h.t}: ${h.part} only reaches ${best.toFixed(2)} m forward`);
   }
 }

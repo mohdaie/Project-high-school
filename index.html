@@ -56,9 +56,9 @@
     <div id="combo" hidden></div>
   </div>
   <div id="stick" hidden><div id="knob"></div></div>
-  <p id="help">Sentuh kiri skrin untuk joystick. Tolak sikit jalan, tolak habis lari.<br>Keyboard: WASD gerak, Shift lari, I J L K butang.</p>
+  <p id="help">Sentuh kiri skrin untuk joystick. Tolak sikit jalan, tolak habis lari.<br>Keyboard: WASD gerak, Shift lari, I J L K butang (W/S + K untuk elak).</p>
   <div id="pad" aria-label="Butang serangan">
-    <button data-act="berat" class="tri" style="grid-area:t"><span>△</span>Berat<kbd>I</kbd></button>
+    <button data-act="tendang" class="tri" style="grid-area:t"><span>△</span>Tendang<kbd>I</kbd></button>
     <button data-act="tumbuk" class="sq" style="grid-area:s"><span>□</span>Tumbuk<kbd>J</kbd></button>
     <button data-act="kasar" class="ci" style="grid-area:c"><span>○</span>Kasar<kbd>L</kbd></button>
     <button data-act="tahan" class="cr" style="grid-area:x"><span>✕</span>Tahan<kbd>K</kbd></button>
@@ -66,18 +66,19 @@
   <button id="listBtn" aria-expanded="false" aria-controls="list">Senarai gerak</button>
   <div id="list" hidden>
     <table>
-      <tr><td>□ □ □</td><td>Hayun, hayun balik, <b>hayun pusing</b></td></tr>
-      <tr><td>→ □</td><td>Terkam</td></tr>
-      <tr><td>← □</td><td>Hook</td></tr>
-      <tr><td>△</td><td><b>Mengamuk</b> (3 pukulan, yang last jatuhkan lawan)</td></tr>
-      <tr><td>→ △</td><td>Combo jalanan (4 pukulan)</td></tr>
-      <tr><td>← △</td><td>Ejek (isi stamina)</td></tr>
-      <tr><td>○</td><td>Tolak</td></tr>
+      <tr><td>□ □ □</td><td>Jab, straight, <b>hook</b></td></tr>
+      <tr><td>→ □</td><td>Hook</td></tr>
+      <tr><td>← □</td><td>Uppercut</td></tr>
+      <tr><td>△</td><td><b>Tendang tinggi</b> ke kepala</td></tr>
+      <tr><td>→ △</td><td>Tendang tolak</td></tr>
+      <tr><td>← △</td><td>Tendang bawah ke peha</td></tr>
+      <tr><td>○</td><td>Lutut</td></tr>
       <tr><td>→ ○</td><td>Rempuh bahu</td></tr>
-      <tr><td>← ○</td><td>Cakar</td></tr>
+      <tr><td>← ○</td><td>Ejek (isi stamina)</td></tr>
       <tr><td>✕ tahan</td><td>Tutup muka</td></tr>
-      <tr><td>→ ✕</td><td>Sapu kaki</td></tr>
-      <tr><td>← ✕</td><td>Lompat</td></tr>
+      <tr><td>✕ + ↑ / ↓</td><td>Elak kiri / kanan</td></tr>
+      <tr><td>→ ✕</td><td>Tunduk</td></tr>
+      <tr><td>← ✕</td><td>Undur</td></tr>
     </table>
     <p><button id="modelBtn">Watak: Jai</button> Tukar antara model Jai dan mannequin di bawahnya.</p>
     <p><button id="guardBtn">Kawan: terbuka</button> Kawan latih tutup muka. Pukulan berat pecahkan tahanan.</p>
