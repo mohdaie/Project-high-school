@@ -34,7 +34,7 @@
     #list { position: fixed; top: calc(76px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: min(340px, calc(100% - 32px)); max-height: calc(100% - 96px); overflow: auto; background: #1f1c2bf2; border: 2px solid var(--line); border-radius: 12px; padding: 10px 14px; font-weight: 500; }
     #list table { border-collapse: collapse; width: 100%; } #list td { padding: 4px 0; } #list td:first-child { white-space: nowrap; padding-right: 12px; font-weight: 800; color: var(--gold); }
     #list p { margin: 8px 0 0; font-size: 12px; opacity: .85; }
-    #tiredBtn, #guardBtn { font: 700 12px system-ui, sans-serif; color: var(--ink); background: var(--gold); border: 0; border-radius: 999px; padding: 5px 10px; margin-right: 6px; }
+    #tiredBtn, #guardBtn, #modelBtn { font: 700 12px system-ui, sans-serif; color: var(--ink); background: var(--gold); border: 0; border-radius: 999px; padding: 5px 10px; margin-right: 6px; }
     #stick { position: fixed; left: 0; top: 0; width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--line); background: #0003; pointer-events: none; }
     #knob { position: absolute; left: 38px; top: 38px; width: 44px; height: 44px; border-radius: 50%; background: #f4ecdc99; transition: background .1s; } #knob.run { background: var(--gold); }
     #help { position: fixed; left: calc(16px + env(safe-area-inset-left, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); max-width: 40%; font-weight: 500; font-size: 12px; opacity: .6; }
@@ -79,6 +79,7 @@
       <tr><td>→ ✕</td><td>Gelongsor ke kaki</td></tr>
       <tr><td>← ✕</td><td>Lompat</td></tr>
     </table>
+    <p><button id="modelBtn">Watak: Jai</button> Tukar antara model Jai dan mannequin di bawahnya.</p>
     <p><button id="guardBtn">Kawan: terbuka</button> Kawan latih tahan dengan tong. Pukulan berat pecahkan tahanan.</p>
     <p><button id="tiredBtn">Penat: tak</button> Stamina tak terhad masa latihan. Tekan untuk hidupkan.</p>
     <p>→ mara ke lawan, ← undur. Tolak joystick sikit untuk jalan perlahan, tolak habis untuk lari.</p>

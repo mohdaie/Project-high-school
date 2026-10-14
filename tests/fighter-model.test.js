@@ -13,7 +13,7 @@ test('fighter GLB is one compact skinned mannequin with every clip the game play
   assert.deepEqual(json.animations.map(a => a.name).sort(), Object.keys(CLIPS).sort());
   for (const a of json.animations) assert.ok(a.channels.some(c => json.nodes[c.target.node].name === 'root' && c.target.path === 'translation'), a.name + ' keeps root motion');
 });
-test('game code poses every move and every strike reaches forward', () => {
+test('game code poses every move, on the mannequin and on Jai\'s model', () => {
   const r = spawnSync(process.execPath, ['--no-warnings', '--loader', new URL('../scripts/node-three-loader.mjs', import.meta.url).pathname, new URL('../scripts/check-fighter.mjs', import.meta.url).pathname], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr + r.stdout); assert.match(r.stdout, /Checked \d+ clips and \d+ poses/);
 });

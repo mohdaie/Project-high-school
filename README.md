@@ -4,7 +4,9 @@ Game lawan 1 lawan 1 untuk telefon. Watak remaja bertarung di satu gelanggang gu
 
 ## Status: v0.6.0, tulang belakang baru
 
-`index.html` ialah gelanggang latihan. **Jai**, budak gaduh jalanan, lawan kawan latih yang cuma terima pukulan. Kedua-dua watak kini ialah **mannequin Universal Animation Library 2** (Quaternius, CC0): satu model berkulit sekitar 1.8 m dengan rangka 65 tulang gaya Unreal, dan setiap gerak dimainkan terus dari klip animasi mocap pakej itu. Mannequin bersendi lama, IK, gerak keyframe dan model Amir fighter sudah dibuang.
+`index.html` ialah gelanggang latihan. **Jai**, budak gaduh jalanan, lawan kawan latih yang cuma terima pukulan. Tulang belakang kedua-dua watak kini ialah **mannequin Universal Animation Library 2** (Quaternius, CC0): satu model berkulit sekitar 1.8 m dengan rangka 65 tulang gaya Unreal, dan setiap gerak dimainkan terus dari klip animasi mocap pakej itu. Mannequin bersendi lama, IK dan gerak keyframe sudah dibuang.
+
+**Jai tetap Jai.** Jai memakai model Amir fighter (`assets/models/amir-fighter.glb`) di atas mannequin itu. Rangka Amir dan mannequin berkongsi bingkai tulang yang sama (UAL1 dan UAL2 ialah rig yang sama), jadi `src/wear.js` menyalin pusingan setiap sendi terus, tanpa pembetulan; pinggul bergerak ikut nisbah panjang kaki. Mannequin terus bermain tanpa kelihatan dan semakan pukulan dibuat padanya, manakala kayu, tong dan kapur keluar dari tangan Jai sendiri. Butang "Watak" dalam Senarai gerak tukar antara Jai dan mannequin. Kalau model Jai gagal dimuat, mannequin digunakan. Kawan latih kekal mannequin.
 
 Empat butang macam pad PS5. Arah joystick (ke lawan atau undur) pilih variasi setiap butang.
 
@@ -39,7 +41,7 @@ Masa latihan stamina tak terhad. Butang "Penat" dalam Senarai gerak hidupkan sem
 
 Pukulan yang kena beri hitstop, gegar kamera, bunyi dan nombor damage. Pukulan berturut-turut dalam 1.1 saat dikira combo. Bila HP kawan latih habis dia jatuh (K.O.) dan bangun semula. Kamera dari sisi, sedikit di belakang Jai.
 
-![Gerak baru: tetak, combo berat, rempuh tong, gelongsor, lompat, kawan tahan](assets/previews/fighter-moves-v060.jpg)
+![Jai di atas rangka baru: tetak, combo berat, rempuh tong, gelongsor, baling kapur, kawan tahan](assets/previews/fighter-moves-v060.jpg)
 
 ```sh
 npm test      # node --test tests/*.test.js
@@ -54,11 +56,14 @@ npm run dev   # http://localhost:4173
 node scripts/build-fighter.mjs "<UAL2>/Unreal-Godot/UAL2_Standard_RM.glb" assets/models/kids-mocap.glb assets/models/fighter.glb
 ```
 
-Skrip ambil mesh, rangka dan 25 klip bertarung dari UAL2, serta Idle/Walk/Jog/Sprint dari `kids-mocap.glb` (UAL1, rangka yang sama dengan nama tulang Rigify yang ditukar balik ke nama UAL2). Channel skala, tulang hujung jari dan channel yang tidak pernah bergerak dari rehat dibuang supaya fail kecil. Klip lain dalam pakej (bertani, kerusi, telefon dan lain-lain) tidak dimasukkan. `npm test` sahkan setiap klip yang digunakan ada dengan panjang yang betul, setiap klip ada root motion, dan dalam setiap tetingkap pukulan bahagian yang memukul memang sampai ke depan, menggunakan kod game sebenar (GLTFLoader, AnimationMixer) tanpa WebGL.
+Skrip ambil mesh, rangka dan 25 klip bertarung dari UAL2, serta Idle/Walk/Jog/Sprint dari `kids-mocap.glb` (UAL1, rangka yang sama dengan nama tulang Rigify yang ditukar balik ke nama UAL2). Channel skala, tulang hujung jari dan channel yang tidak pernah bergerak dari rehat dibuang supaya fail kecil. Klip lain dalam pakej (bertani, kerusi, telefon dan lain-lain) tidak dimasukkan. `npm test` sahkan setiap klip yang digunakan ada dengan panjang yang betul, setiap klip ada root motion, dalam setiap tetingkap pukulan bahagian yang memukul memang sampai ke depan, setiap tulang kulit Amir digerakkan oleh mannequin, dan mesh Jai kekal utuh dalam setiap gerak, menggunakan kod game sebenar (GLTFLoader, AnimationMixer, skinning) tanpa WebGL.
+
+Model Amir fighter dan sumber Blendernya (`amir-fighter.blend`, `scripts/refine-amir.py`) tidak berubah; `tests/amir-model.test.js` masih semak penumbuk, berat tulang dan bentuk kepalanya.
 
 ## Susun atur gaduh
 
 - `src/brawler.js`: logik tulen: panjang klip, setiap gerak (segmen klip, kos stamina, tetingkap pukulan, damage, knockback, root motion, prop), chain tetak, stamina, dan reaksi kawan latih (tersentak, jatuh, K.O., tahan, pecah tahan). Diuji dalam `tests/brawler.test.js`.
+- `src/wear.js`: pakaikan model berkulit dari `actor.js` (Amir) pada fighter: salin pusingan sendi, pinggul, dan pindahkan prop ke tangan model.
 - `src/fighter.js`: muat `fighter.glb`, klon untuk setiap watak, adun klip ikut masa dan berat yang game tetapkan setiap bingkai, root motion, nafas, kayu dan tong, titik pukulan dan sasaran.
 - `src/breath.js`: nafas: rentak, tahan nafas masa menyerang, hembus selepasnya, dan usaha yang naik dan reda
 - `src/brawler-view.js`: gelanggang, kamera sisi, joystick dan butang, semakan pukulan, kapur, kesan pukulan, reaksi dan K.O. kawan latih.

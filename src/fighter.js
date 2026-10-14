@@ -106,9 +106,10 @@ export function createFighter(scene, gltf, { body = 0xd9a36c, joint = 0x5b3a28 }
     // Props grow into the hand and shrink away.
     for (const [n, p] of Object.entries(props)) {
       wantProp[n] = T.MathUtils.clamp(wantProp[n] + (prop === n || (n === 'tong' && guard) ? dt : -dt) / .12, 0, 1);
-      p.visible = wantProp[n] > .01; p.scale.setScalar(Math.max(.001, wantProp[n]));
+      p.visible = wantProp[n] > .01; p.scale.setScalar(Math.max(.001, wantProp[n]) * fighter.propScale);
     }
     group.updateMatrixWorld(true);
+    fighter.worn?.(dt);
   }
 
   const points = { head: () => bone('Head').getWorldPosition(v1).add(v2.set(0, .1, 0)), chest: () => bone('spine_03').getWorldPosition(v1).add(v2.set(0, .08, 0)), hips: () => bone('pelvis').getWorldPosition(v1),
@@ -116,11 +117,15 @@ export function createFighter(scene, gltf, { body = 0xd9a36c, joint = 0x5b3a28 }
     footL: () => bone('foot_l').getWorldPosition(v1), footR: () => bone('foot_r').getWorldPosition(v1) };
   // A target point, or a strike part's points (a segment gives several).
   const point = (name, out = new T.Vector3()) => out.copy(points[name]());
-  function strike(name, n = 4) {
-    const p = PARTS[name], b = bone(p.bone);
-    if (!p.b) return [b.localToWorld(new T.Vector3().fromArray(p.a))];
-    return Array.from({ length: n }, (_, i) => b.localToWorld(new T.Vector3().fromArray(p.a).lerp(v1.fromArray(p.b), i / (n - 1))));
+  // Strikes are judged on the mannequin; `seen` gives the points on the body
+  // drawn instead (a worn model's own hands).
+  function strike(name, n = 4, seen = false) {
+    const p = PARTS[name], { bone: b, s } = seen ? fighter.hold(p.bone) : { bone: bone(p.bone), s: 1 }, at = i => new T.Vector3().fromArray(p.a).lerp(v1.fromArray(p.b ?? p.a), i / (n - 1 || 1)).multiplyScalar(s);
+    return p.b ? Array.from({ length: n }, (_, i) => b.localToWorld(at(i))) : [b.localToWorld(at(0))];
   }
   const flash = v => { for (const m of Object.values(mats)) m.emissive.setScalar(v); };
-  return { group, model, bone, mixer, actions, drive, path, rootAt, point, strike, flash, props, len };
+  // Another body can wear the fighter (wear.js): `hold` then gives the bone a
+  // strike part or prop follows, with the scale of that bone's units.
+  const fighter = { group, model, bone, mixer, actions, drive, path, rootAt, point, strike, flash, props, len, hold: n => ({ bone: bone(n), s: 1 }), propScale: 1, worn: null };
+  return fighter;
 }
