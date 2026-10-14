@@ -1,6 +1,6 @@
 # Project High School
 
-Game lawan 1 lawan 1 untuk telefon. Watak remaja bertarung di satu gelanggang guna silat, boxing, MMA dan capoeira. Lawan komputer dulu.
+Game gaduh jalanan 1 lawan 1 untuk telefon. Budak sekolah bertumbuk tangan kosong, tanpa senjata. Lawan komputer dulu.
 
 ## Status: v0.6.0, gaduh jalanan atas tulang belakang baru
 
@@ -112,6 +112,6 @@ Untuk tambah watak baru: eksport watak A-pose menghadap depan sebagai GLB, tulis
 - Lawan komputer yang menyerang balik (klip yang sama), dan tahan Jai yang kurangkan damage
 - Mannequin perempuan UAL2 (rangka sama) untuk watak seperti Hana
 - Mod "naik angin" untuk Jai
-- Watak remaja: Aiman (silat), Danial (boxing), Hana (capoeira), Raj (MMA)
+- Watak remaja lain untuk dilawan: Aiman, Danial, Hana, Raj (semua gaduh jalanan)
 - Hitbox pada tulang, HP dan stamina, tiga pusingan, AI komputer
 - Kawalan sentuh untuk telefon dan satu gelanggang sebenar

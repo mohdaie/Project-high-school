@@ -3,7 +3,7 @@
   "version": "0.6.0",
   "private": true,
   "type": "module",
-  "description": "Teen 1v1 fighting game for phones: silat, boxing, MMA and capoeira.",
+  "description": "Teen 1v1 street fight game for phones: bare hands, no weapons.",
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "test": "node --test tests/*.test.js"
