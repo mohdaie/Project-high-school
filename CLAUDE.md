@@ -1,7 +1,7 @@
 # Project High School: guide for coding agents
 
 A 1v1 teen fighting game for phones (Three.js, plain ES modules, no bundler). `README.md` is the spec and lists every module.
-The character system in `src/` was copied from mohdaie/Malaysian-retro-game (v2.15.0) without its `?v=` import suffixes.
+Fighters are the Universal Animation Library 2 mannequin (`assets/models/fighter.glb`, built by `scripts/build-fighter.mjs`), animated straight from its clips: rules and clip timings in `src/brawler.js`, playback in `src/fighter.js`. `watak.html` still uses the older character system copied from mohdaie/Malaysian-retro-game (v2.15.0).
 
 ## Commands
 

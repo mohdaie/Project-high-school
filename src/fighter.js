@@ -1,0 +1,126 @@
+import * as T from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone } from 'three/addons/utils/SkeletonUtils.js';
+import { toon, outline } from './illustration.js';
+import { LOCO, frame } from './brawler.js?v=0.6.0';
+
+// The fighter: the Universal Animation Library 2 mannequin (Quaternius, CC0),
+// 1.8 m, on a UE-style 65-bone rig, played straight from its clips. Every
+// clip's time and weight is set by the game each frame (nothing runs on its
+// own clock), so poses match the rules in brawler.js exactly.
+export const FIGHTER_URL = new URL('../assets/models/fighter.glb', import.meta.url).href;
+export const loadFighter = (url = FIGHTER_URL, parse) => parse ? parse(url) : new GLTFLoader().loadAsync(url);
+
+// Strike parts: a point (or a segment a..b) in a bone's space, and a radius.
+// The kayu runs out of the fist along the thumb side (hand +z).
+export const PARTS = {
+  kayu: { bone: 'hand_r', a: [0, .08, .12], b: [0, .08, .84], r: .04 },
+  handR: { bone: 'hand_r', a: [0, .08, 0], r: .06 }, handL: { bone: 'hand_l', a: [0, .08, 0], r: .06 },
+  tong: { bone: 'hand_l', a: [-.09, .07, 0], r: .24 },
+  footR: { bone: 'ball_r', a: [0, 0, 0], r: .08 }, footL: { bone: 'ball_l', a: [0, 0, 0], r: .08 }
+};
+// Where a fighter can be hit: centre, radius, zone.
+export const TARGETS = [['head', .15, 'head'], ['chest', .2, 'body'], ['hips', .19, 'body'], ['shinL', .12, 'low'], ['shinR', .12, 'low'], ['footL', .1, 'low'], ['footR', .1, 'low']];
+
+const GAIT = [['idle', 0], ['walk', 1.2], ['jog', 2.4], ['sprint', 3.6]], NATURAL = { walk: 1.25, jog: 2.6, sprint: 4.4 };
+const v1 = new T.Vector3(), v2 = new T.Vector3(), qA = new T.Quaternion();
+
+export function createFighter(scene, gltf, { body = 0xd9a36c, joint = 0x5b3a28 } = {}) {
+  const group = new T.Group(), model = clone(gltf.scene); group.add(model); scene.add(group);
+  const mats = { M_Main: toon(body), M_Joints: toon(joint) }, skins = [];
+  model.traverse(o => { if (o.isSkinnedMesh) { o.material = mats[o.material.name] ?? mats.M_Main; o.castShadow = true; o.frustumCulled = false; skins.push(o); } });
+  for (const s of skins) { outline(s, 2); }
+  model.traverse(o => { if (o.userData.ink) o.frustumCulled = false; });
+  const bones = {}; model.traverse(o => { if (o.isBone) bones[o.name] = o; });
+  const bone = n => bones[n];
+
+  // Every clip is an action that always plays; weights pick what shows.
+  const mixer = new T.AnimationMixer(model), actions = {}, roots = {};
+  for (const clip of gltf.animations) {
+    const a = actions[clip.name] = mixer.clipAction(clip); a.play(); a.setEffectiveWeight(0);
+    const track = clip.tracks.find(t => t.name === 'root.position'); roots[clip.name] = track ? track.createInterpolant() : null;
+  }
+  const len = n => actions[n].getClip().duration;
+  // Root motion of a clip at a time, in the model's own space (+z forward).
+  const rootAt = (clip, time, out = new T.Vector3()) => { const r = roots[clip]; if (!r) return out.set(0, 0, 0); const v = r.evaluate(Math.min(time, len(clip))); return out.set(v[0], 0, v[2]); };
+  // Total root travel of a move from its start to time t.
+  function path(m, t, out = new T.Vector3()) {
+    out.set(0, 0, 0); const f = frame(m, t);
+    for (let i = 0; i < f.i; i++) { const s = m.play[i]; out.add(rootAt(s.clip, s.to, v1)).sub(rootAt(s.clip, s.from, v2)); }
+    const s = m.play[f.i]; return out.add(rootAt(s.clip, f.time, v1)).sub(rootAt(s.clip, s.from, v2));
+  }
+
+  // Props
+  const wood = toon(0x9a6a3c), metal = toon(0x9aa3ad), tape = toon(0x2b2b33);
+  const kayu = new T.Group(), stick = new T.Mesh(new T.BoxGeometry(.04, .04, .78), wood), grip = new T.Mesh(new T.BoxGeometry(.05, .05, .16), tape);
+  stick.position.z = .43; grip.position.z = .03; kayu.add(stick, grip); kayu.position.set(0, .08, 0); bone('hand_r').add(kayu);
+  const tong = new T.Group(), lid = new T.Mesh(new T.CylinderGeometry(.26, .27, .035, 22), metal), knob = new T.Mesh(new T.BoxGeometry(.12, .03, .04), metal);
+  knob.position.y = .03; tong.add(lid, knob); tong.rotation.z = Math.PI / 2; tong.position.set(-.07, .07, 0); bone('hand_l').add(tong);
+  const props = { kayu, tong }, wantProp = { kayu: 0, tong: 0 };
+  for (const p of Object.values(props)) { p.traverse(o => { if (o.isMesh) { o.castShadow = true; outline(o, 1.6); } }); p.scale.setScalar(.001); p.visible = false; }
+
+  // Blending: the current move, frozen poses fading out, and the standing loops.
+  const fades = []; let last = null, moveW = 0;
+  const loco = { phase: 0, idle: 0, guard: 0, guardW: 0 };
+  const breathBones = [['spine_02', -.025], ['spine_03', -.04]].map(([n, k]) => [bone(n), k, bone(n).quaternion.clone()]);
+  const lateral = new T.Vector3();
+
+  // m: the move (or reaction) playing, t its time; speed: ground speed (m/s,
+  // negative when backing off); guard: covering up; breath: -1..1.
+  function drive(dt, { m = null, t = 0, speed = 0, guard = false, breath = 0, prop = null } = {}) {
+    const w = {};
+    if (m) {
+      const f = frame(m, t), cur = { m, i: f.i, clip: f.clip, time: f.time };
+      if (last && (last.m !== m || last.i !== f.i) && moveW > 0) fades.push({ clip: last.clip, time: last.time, w: moveW * (last.m !== m ? 1 : .6) });
+      if (!last || last.m !== m) moveW = fades.length ? 1 : moveW;
+      moveW = Math.min(1, moveW + dt / .1); last = cur;
+    } else moveW = Math.max(0, moveW - dt / .18);
+    for (const f of fades) f.w -= dt / .1;
+    for (let i = fades.length - 1; i >= 0; i--) if (fades[i].w <= 0) fades.splice(i, 1);
+    let used = 0;
+    if (last && moveW > 0) { w[last.clip] = { time: last.time, w: moveW }; used = moveW; }
+    if (!m && moveW <= 0) last = null;
+    for (const f of fades) { const k = Math.min(f.w, Math.max(0, 1 - used)); if (k > 0) { (w[f.clip] ??= { time: f.time, w: 0 }).w += k; used += k; } }
+    // Standing loops share what is left, by speed; walking and running stay in step.
+    const rest = Math.max(0, 1 - used), s = Math.abs(speed);
+    loco.guardW = T.MathUtils.clamp(loco.guardW + (guard ? dt : -dt) / .15, 0, 1);
+    const gw = {}; for (let i = 0; i < GAIT.length; i++) {
+      const [n, at] = GAIT[i], lo = GAIT[i - 1]?.[1] ?? -1, hi = GAIT[i + 1]?.[1];
+      gw[n] = hi === undefined ? T.MathUtils.clamp((s - lo) / (at - lo), 0, 1) : s <= at ? T.MathUtils.clamp((s - lo) / (at - lo), 0, 1) : T.MathUtils.clamp((hi - s) / (hi - at), 0, 1);
+    }
+    let cycle = 0, sum = 0; for (const n of ['walk', 'jog', 'sprint']) { cycle += gw[n] * len(LOCO[n]) / Math.max(.5, Math.min(1.5, s / NATURAL[n])); sum += gw[n]; }
+    if (sum > 0) loco.phase = (loco.phase + Math.sign(speed || 1) * dt / (cycle / sum) + 1) % 1;
+    loco.idle = (loco.idle + dt) % len(LOCO.idle); loco.guard = (loco.guard + dt) % len(LOCO.guard);
+    const stand = gw.idle * (1 - loco.guardW);
+    const put = (n, time, k) => { if (k > 0) (w[n] ??= { time, w: 0 }).w += k * rest; };
+    put(LOCO.idle, loco.idle, stand); put(LOCO.guard, loco.guard, gw.idle * loco.guardW + (1 - gw.idle) * loco.guardW * .5);
+    for (const n of ['walk', 'jog', 'sprint']) put(LOCO[n], loco.phase * len(LOCO[n]), gw[n] * (1 - loco.guardW * .5));
+    for (const [n, a] of Object.entries(actions)) { const x = w[n]; a.setEffectiveWeight(x ? x.w : 0); if (x) a.time = Math.min(x.time, len(n) - 1e-4); }
+    for (const [b, , q] of breathBones) b.quaternion.copy(q);
+    mixer.update(0);
+    // Root motion is the game's to apply; the root bone stays home.
+    bone('root').position.set(0, 0, 0);
+    // Breath on top: the chest lifts and opens.
+    group.updateMatrixWorld(true); lateral.set(1, 0, 0).applyQuaternion(group.quaternion);
+    for (const [b, k] of breathBones) { b.getWorldQuaternion(qA).invert(); b.rotateOnAxis(v1.copy(lateral).applyQuaternion(qA), k * breath); }
+    // Props grow into the hand and shrink away.
+    for (const [n, p] of Object.entries(props)) {
+      wantProp[n] = T.MathUtils.clamp(wantProp[n] + (prop === n || (n === 'tong' && guard) ? dt : -dt) / .12, 0, 1);
+      p.visible = wantProp[n] > .01; p.scale.setScalar(Math.max(.001, wantProp[n]));
+    }
+    group.updateMatrixWorld(true);
+  }
+
+  const points = { head: () => bone('Head').getWorldPosition(v1).add(v2.set(0, .1, 0)), chest: () => bone('spine_03').getWorldPosition(v1).add(v2.set(0, .08, 0)), hips: () => bone('pelvis').getWorldPosition(v1),
+    shinL: () => bone('calf_l').getWorldPosition(v1).lerp(bone('foot_l').getWorldPosition(v2), .5), shinR: () => bone('calf_r').getWorldPosition(v1).lerp(bone('foot_r').getWorldPosition(v2), .5),
+    footL: () => bone('foot_l').getWorldPosition(v1), footR: () => bone('foot_r').getWorldPosition(v1) };
+  // A target point, or a strike part's points (a segment gives several).
+  const point = (name, out = new T.Vector3()) => out.copy(points[name]());
+  function strike(name, n = 4) {
+    const p = PARTS[name], b = bone(p.bone);
+    if (!p.b) return [b.localToWorld(new T.Vector3().fromArray(p.a))];
+    return Array.from({ length: n }, (_, i) => b.localToWorld(new T.Vector3().fromArray(p.a).lerp(v1.fromArray(p.b), i / (n - 1))));
+  }
+  const flash = v => { for (const m of Object.values(mats)) m.emissive.setScalar(v); };
+  return { group, model, bone, mixer, actions, drive, path, rootAt, point, strike, flash, props, len };
+}

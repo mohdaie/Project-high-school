@@ -1,77 +1,95 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sample, mix } from '../src/keyframes.js';
-import { STANCE, MOVES, BUTTONS, STAMINA, CLOSE, newFighter, press, pick, tick, activeHits, grabbing } from '../src/brawler.js';
+import { CLIPS, LOCO, MOVES, REACT, BUTTONS, STAMINA, segLen, frame, newFighter, press, pick, tick, activeHits, newTarget, receive, settle, floored } from '../src/brawler.js';
 
-test('sampling eases between keys and holds the ends', () => {
-  const a = { x: [0, 10] }, b = { x: [1, 20] }, keys = [[0, a], [1, b]];
-  assert.deepEqual(sample(keys, -1), a); assert.deepEqual(sample(keys, 2), b);
-  assert.deepEqual(sample(keys, .5), { x: [.5, 15] });
-  assert.ok(sample(keys, .25).x[0] < .25, 'eases in');
-  assert.deepEqual(mix(a, b, 0), a);
+test('every move plays known clips, inside each clip, and its hits fit its time', () => {
+  for (const [key, m] of Object.entries({ ...MOVES, ...REACT })) {
+    assert.ok(m.play.length > 0, key);
+    for (const s of m.play) { assert.ok(CLIPS[s.clip], `${key}: ${s.clip}`); assert.ok(s.from >= 0 && s.from <= s.to && s.to <= CLIPS[s.clip] && s.speed > 0, `${key}: ${s.clip} span`); }
+    assert.ok(m.dur > 0 && m.dur <= m.play.reduce((t, s) => t + segLen(s), 0) + 1e-9, `${key} ends within its clips`);
+    for (const h of m.hits ?? []) assert.ok(h.t[0] < h.t[1] && h.t[1] <= m.dur && h.dmg > 0, `${key} hit window`);
+    if (m.chain) { assert.ok(MOVES[m.chain], `${key} chains to a move`); assert.ok(m.chainAt < m.dur, `${key} chains before it ends`); }
+  }
+  for (const n of Object.values(LOCO)) assert.ok(CLIPS[n], n);
 });
 
-test('every move key carries every stance channel and ends back in stance', () => {
-  for (const [key, m] of Object.entries(MOVES)) {
-    for (const [t, pose] of m.keys) {
-      assert.deepEqual(Object.keys(pose).sort(), Object.keys(STANCE).sort(), `${key} at ${t}`);
-      for (const [ch, v] of Object.entries(pose)) assert.equal(v.length, STANCE[ch].length, `${key}.${ch}`);
-    }
-    for (let i = 1; i < m.keys.length; i++) assert.ok(m.keys[i][0] > m.keys[i - 1][0], `${key} keys in order`);
-    assert.equal(m.keys.at(-1)[0], m.dur, `${key} lasts its keys`);
-    const end = m.keys.at(-1)[1]; for (const ch in STANCE) if (ch !== 'fwd') assert.deepEqual(end[ch], STANCE[ch], `${key} ends in stance (${ch})`);
-    for (const h of m.hits) assert.ok(h.t[0] < h.t[1] && h.t[1] <= m.dur && h.dmg > 0, `${key} hit window`);
-  }
+test('frame walks through segments and holds the last frame', () => {
+  const m = MOVES.slashA;
+  assert.deepEqual(frame(m, 0), { i: 0, clip: 'Sword_Regular_A', time: 0 });
+  assert.equal(frame(m, .5).clip, 'Sword_Regular_A_Rec');
+  assert.ok(Math.abs(frame(m, .5).time - (.5 - CLIPS.Sword_Regular_A)) < 1e-9);
+  assert.deepEqual(frame(m, 9), { i: 1, clip: 'Sword_Regular_A_Rec', time: CLIPS.Sword_Regular_A_Rec });
+  const down = REACT.down, held = frame(down, CLIPS.Hit_Knockback + .3);
+  assert.equal(held.i, 1); assert.equal(held.time, CLIPS.Hit_Knockback, 'lies still on the floor');
+  assert.ok(Math.abs(frame(MOVES.jump, .1).time - .13) < 1e-9, 'played faster');
 });
 
 test('a move costs stamina, blocks other moves and finishes', () => {
   const f = newFighter();
-  assert.deepEqual(press(f, 'tendang'), { move: 'roundhouse' });
-  assert.equal(f.stamina, STAMINA.max - MOVES.roundhouse.cost);
-  assert.equal(press(f, 'kasar'), null, 'busy');
-  tick(f, .3); assert.equal(activeHits(f).length, 1);
-  tick(f, .6); assert.equal(f.move, null);
+  assert.deepEqual(press(f, 'berat'), { move: 'heavy' });
+  assert.equal(f.stamina, STAMINA.max - MOVES.heavy.cost);
+  assert.equal(press(f, 'tong'), null, 'busy');
+  tick(f, .45); assert.equal(activeHits(f).length, 1);
+  tick(f, MOVES.heavy.dur); assert.equal(f.move, null);
 });
 
-test('three tumbuk taps chain jab, straight, then the haymaker', () => {
+test('three tetak taps chain tetak, tetak balik, then tetak penamat', () => {
   const f = newFighter();
-  press(f, 'tumbuk'); press(f, 'tumbuk');
-  assert.equal(tick(f, .2), 'cross'); press(f, 'tumbuk');
-  assert.equal(tick(f, .25), 'haymaker');
-  assert.equal(f.stamina, STAMINA.max - 6 - 8 - 18);
-  assert.equal(press(f, 'tumbuk'), null, 'the haymaker ends the chain');
+  press(f, 'tetak'); assert.deepEqual(press(f, 'tetak'), { queued: 'slashB' });
+  assert.equal(tick(f, .2), null, 'waits for the first cut to finish');
+  assert.equal(tick(f, .25), 'slashB'); press(f, 'tetak');
+  assert.equal(tick(f, .55), 'slashC');
+  assert.equal(f.stamina, STAMINA.max - 6 - 7 - 12);
+  assert.equal(press(f, 'tetak'), null, 'tetak penamat ends the chain');
+  tick(f, MOVES.slashC.dur); assert.equal(f.move, null);
+});
+
+test('without a second tap the cut plays its recovery', () => {
+  const f = newFighter(); press(f, 'tetak'); tick(f, .6);
+  assert.equal(f.move, 'slashA'); assert.equal(frame(MOVES.slashA, f.t).clip, 'Sword_Regular_A_Rec');
 });
 
 test('four buttons and the stick pick every move', () => {
   const seen = new Set();
-  for (const b of Object.keys(BUTTONS)) for (const dir of [-1, 0, 1]) for (const near of [.5, 2]) { const k = pick(b, dir, near); if (k) seen.add(k); }
-  assert.deepEqual([...seen].sort(), Object.keys(MOVES).filter(k => k !== 'cross' && k !== 'haymaker').sort(), 'straight and haymaker come from the chain');
-  assert.equal(pick('tumbuk', -1), 'uppercut'); assert.equal(pick('tendang', 1), 'pushKick'); assert.equal(pick('tendang', -1), 'lowKick');
-  assert.equal(pick('kasar', 0, CLOSE), 'headlock'); assert.equal(pick('kasar', 0, 2), 'barge'); assert.equal(pick('kasar', 1), 'knee'); assert.equal(pick('kasar', -1), 'taunt');
+  for (const b of Object.keys(BUTTONS)) for (const dir of [-1, 0, 1]) { const k = pick(b, dir); if (k) seen.add(k); }
+  assert.deepEqual([...seen].sort(), Object.keys(MOVES).filter(k => k !== 'slashB' && k !== 'slashC').sort(), 'the later cuts come from the chain');
+  assert.equal(pick('tetak', 1), 'dash'); assert.equal(pick('tetak', -1), 'hook');
+  assert.equal(pick('berat'), 'heavy'); assert.equal(pick('berat', 1), 'combo'); assert.equal(pick('berat', -1), 'throw');
+  assert.equal(pick('tong'), 'bash'); assert.equal(pick('tong', 1), 'shieldDash'); assert.equal(pick('tong', -1), 'scratch');
+  assert.equal(pick('tahan', 1), 'slide'); assert.equal(pick('tahan', -1), 'jump');
   assert.equal(pick('tahan'), null, 'guard is held, not pressed');
 });
 
-test('tired fighters cannot attack; resting and taunting bring stamina back', () => {
-  const f = newFighter(); f.stamina = 5;
-  assert.deepEqual(press(f, 'tendang'), { fail: 'penat' });
-  press(f, 'kasar', -1); tick(f, 1.4); assert.equal(f.stamina, 30);
-  tick(f, 1); assert.equal(f.stamina, 30 + STAMINA.regen * (1 - STAMINA.rest), 'regen after the rest delay');
+test('weapon moves show their prop', () => {
+  for (const [k, m] of Object.entries(MOVES)) if (m.hits.some(h => h.part === 'kayu' || h.part === 'tong')) assert.equal(m.prop, m.hits[0].part, k);
 });
 
-test('the headlock needs the opponent close and holds them for its grab', () => {
-  const f = newFighter();
-  assert.deepEqual(press(f, 'kasar', 0, 2), { move: 'barge' }, 'too far: barge in instead');
-  tick(f, 1); assert.deepEqual(press(f, 'kasar', 0, .9), { move: 'headlock' }); tick(f, 1); assert.ok(grabbing(f));
-  tick(f, 1.2); assert.ok(!grabbing(f));
-});
-
-test('guard and partner poses carry every channel', async () => {
-  const { GUARD, PARTNER } = await import('../src/brawler.js');
-  for (const [k, p] of Object.entries({ GUARD, ...PARTNER })) assert.deepEqual(Object.keys(p).sort(), Object.keys(STANCE).sort(), k);
+test('tired fighters cannot attack; resting brings stamina back', () => {
+  const f = newFighter(); f.stamina = 20;
+  assert.deepEqual(press(f, 'berat'), { fail: 'penat' });
+  press(f, 'tetak'); tick(f, MOVES.slashA.dur); assert.equal(f.move, null); assert.equal(f.stamina, 14);
+  tick(f, 1); assert.ok(Math.abs(f.stamina - (14 + STAMINA.regen * (1 - STAMINA.rest))) < 1e-9, 'regen after the rest delay');
 });
 
 test('a tireless fighter attacks forever', () => {
   const f = newFighter({ tireless: true });
-  for (let i = 0; i < 30; i++) { assert.ok(press(f, 'tendang').move); tick(f, 1); }
+  for (let i = 0; i < 30; i++) { assert.ok(press(f, 'berat').move); tick(f, 5); }
   assert.equal(f.stamina, STAMINA.max);
+});
+
+test('the partner flinches, goes down to heavy hits, and gets up after a K.O.', () => {
+  const p = newTarget();
+  assert.deepEqual(receive(p, { dmg: 5 }), { dmg: 5, react: 'flinch' });
+  assert.deepEqual(receive(p, { dmg: 10, heavy: true }), { dmg: 10, react: 'down' }); assert.ok(floored(p));
+  receive(p, { dmg: 4 }); assert.equal(p.react, 'down', 'a flinch does not cut a fall short');
+  p.hp = 3; assert.equal(receive(p, { dmg: 5 }).react, 'ko'); assert.equal(p.hp, 0);
+  let up = null; for (let t = 0; t < 10 && !up; t += .1) up = settle(p, .1);
+  assert.equal(up, 'ko'); assert.equal(p.hp, 100); assert.equal(p.react, null);
+});
+
+test('a guard soaks light hits and breaks on heavy ones', () => {
+  const p = newTarget(); p.guard = true;
+  assert.deepEqual(receive(p, { dmg: 10 }), { dmg: 2, react: 'block' });
+  assert.deepEqual(receive(p, { dmg: 10, heavy: true }), { dmg: 6, react: 'break' });
+  assert.equal(p.hp, 92);
 });

@@ -1,16 +1,13 @@
 import * as T from 'three';
-import { inkViewport } from './illustration.js';
-import { createMannequin } from './mannequin.js';
-import { sample, mix } from './keyframes.js';
+import { inkViewport, toon } from './illustration.js';
 import { newBreath, breathe } from './breath.js';
-import { loadRig, loadModel, createActor, MODELS } from './actor.js';
-import { retarget } from './retarget.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { STANCE, GUARD, PARTNER, MOVES, newFighter, press, tick, activeHits, grabbing } from './brawler.js?v=0.5.3';
+import { loadFighter, createFighter, PARTS, TARGETS } from './fighter.js?v=0.6.0';
+import { MOVES, REACT, newFighter, press, tick, activeHits, newTarget, receive, settle, floored } from './brawler.js?v=0.6.0';
 
-// Training ring: Jai against a sparring partner who takes the hits.
-// Camera from the side, Jai on the left. Stick: right = toward the partner,
-// left = back off, up/down = step round him.
+// Training ring: Jai against a sparring partner who takes the hits. Both are
+// the UAL2 mannequin. Camera from the side, Jai on the left. Stick: right =
+// toward the partner, left = back off, up/down = step round him.
 const $ = id => document.getElementById(id);
 const canvas = $('view'), renderer = new T.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.outputColorSpace = T.SRGBColorSpace; renderer.shadowMap.enabled = true;
@@ -20,43 +17,33 @@ scene.add(new T.HemisphereLight(0xfff1dc, 0x3a4660, 1.15));
 const rim = new T.DirectionalLight(0x9fc4ff, .9); rim.position.set(-3, 4, -5); scene.add(rim);
 const sun = new T.DirectionalLight(0xffe2bd, 1.5); sun.position.set(2, 7, 3); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
 Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5 }); scene.add(sun);
-const RING = 3.6, REST = .95;
+const RING = 3.6, REST = 1.1;
 const floor = new T.Mesh(new T.CircleGeometry(RING + .5, 56), new T.MeshLambertMaterial({ color: 0x3a4660 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
 const line = new T.Mesh(new T.RingGeometry(RING, RING + .12, 56), new T.MeshBasicMaterial({ color: 0xd8322a })); line.rotation.x = -Math.PI / 2; line.position.y = .003; scene.add(line);
 const outer = new T.Mesh(new T.CircleGeometry(30, 32), new T.MeshLambertMaterial({ color: 0x1b1824 })); outer.rotation.x = -Math.PI / 2; outer.position.y = -.01; scene.add(outer);
 
-const me = { m: createMannequin(scene, { body: 0xd9a36c, joint: 0x5b3a28, band: 0xd8322a }), f: newFighter({ tireless: true }), pos: new T.Vector3(-.6, 0, 0), yaw: 0, vel: new T.Vector3(), phase: 0, fwd: 0, seq: 0, breath: newBreath() };
-const foe = { m: createMannequin(scene, { body: 0x8fa3b8, joint: 0x3e4a5c }), pos: new T.Vector3(.6, 0, 0), yaw: 0, hp: 100, react: PARTNER.idle, rw: 0, knock: new T.Vector3(), hold: 0, down: -1, flash: 0, breath: newBreath() };
+const me = { f: newFighter({ tireless: true }), pos: new T.Vector3(-.65, 0, 0), yaw: 0, vel: new T.Vector3(), breath: newBreath(), path: new T.Vector3(), seq: -1, prev: {} };
+const foe = { s: newTarget(), pos: new T.Vector3(.65, 0, 0), yaw: 0, knock: new T.Vector3(), flash: 0, breath: newBreath(), path: new T.Vector3(), react: null, t: 0 };
 
-// Amir's skinned model (from Malaysian-retro-game) worn over Jai's
-// mannequin, which keeps posing unseen and drives his bones. Scaled from a
-// 1.5 m child toward the mannequin's 1.75 m so the reach matches.
-const AMIR_SCALE = 1.17;
-let amir = null, showAmir = false, wantAmir = true;
-function useAmir(on) { wantAmir = on; showAmir = on && !!amir; me.m.root.visible = !showAmir; if (amir) amir.a.group.visible = showAmir; $('modelBtn').textContent = showAmir ? 'Watak: Amir' : 'Watak: mannequin'; }
 // Hosts that cannot serve .glb get each model as base64 text beside it
 // (window.GLB_TXT set by the page).
 const glbText = window.GLB_TXT ? url => fetch(url.replace(/(\?|$)/, '.txt$1')).then(r => r.text()).then(b => { const bin = atob(b.trim()), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new GLTFLoader().parseAsync(a.buffer, ''); }) : undefined;
-const fighterModel = new URL('../assets/models/amir-fighter.glb?v=0.5.2', import.meta.url).href;
-Promise.all([loadRig(undefined, glbText), loadModel(fighterModel, glbText).catch(() => loadModel(MODELS.amir, glbText))]).then(([rig, model]) => {
-  const a = createActor(scene, 0, 0, 'amir', rig, model); amir = { a, update: retarget(a, me.m, AMIR_SCALE) }; useAmir(wantAmir);
-}).catch(e => { console.warn('Amir unavailable', e); $('modelBtn').hidden = true; });
 
 // ---- input: keyboard, a floating stick on the left, buttons on the right
 const keys = new Set(), stick = { id: null, x: 0, y: 0, ox: 0, oy: 0 };
 // Keyboard face buttons sit in the same diamond: I triangle, J square, L circle, K cross.
-const KEYMAP = { KeyJ: 'tumbuk', KeyI: 'tendang', KeyL: 'kasar' };
+const KEYMAP = { KeyJ: 'tetak', KeyI: 'berat', KeyL: 'tong', KeyK: 'tahan', Space: 'tahan' };
 addEventListener('keydown', e => { if (e.repeat) return; keys.add(e.code); if (KEYMAP[e.code]) act(KEYMAP[e.code]); audio(); });
 addEventListener('keyup', e => keys.delete(e.code));
 let guardHeld = false;
 for (const b of document.querySelectorAll('#pad button')) {
   const a = b.dataset.act;
-  b.addEventListener('pointerdown', e => { e.preventDefault(); audio(); b.classList.add('on'); if (a === 'tahan') guardHeld = true; else act(a); });
+  b.addEventListener('pointerdown', e => { e.preventDefault(); audio(); b.classList.add('on'); if (a === 'tahan') guardHeld = true; act(a); });
   for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => { b.classList.remove('on'); if (a === 'tahan') guardHeld = false; });
 }
 const base = $('stick'), knob = $('knob');
 $('tiredBtn').onclick = () => { me.f.tireless = !me.f.tireless; me.f.stamina = 100; $('tiredBtn').textContent = me.f.tireless ? 'Penat: tak' : 'Penat: ya'; $('stamWrap').hidden = me.f.tireless; };
-$('modelBtn').onclick = () => useAmir(!wantAmir);
+$('guardBtn').onclick = () => { foe.s.guard = !foe.s.guard; $('guardBtn').textContent = foe.s.guard ? 'Kawan: tahan' : 'Kawan: terbuka'; };
 $('listBtn').onclick = () => { const l = $('list'); l.hidden = !l.hidden; $('listBtn').setAttribute('aria-expanded', !l.hidden); };
 canvas.addEventListener('pointerdown', e => { if (stick.id !== null || e.clientX > innerWidth * .5) return; audio(); stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY; canvas.setPointerCapture(e.pointerId); base.hidden = false; base.style.transform = `translate(${e.clientX - 60}px,${e.clientY - 60}px)`; moveStick(e); });
 canvas.addEventListener('pointermove', e => { if (e.pointerId === stick.id) moveStick(e); });
@@ -74,19 +61,19 @@ function pop(text, cls = '') { const p = $('pop'); p.textContent = text; p.class
 // The stick toward the partner (1) or away (-1) picks each button's variant.
 const stickDir = () => { const x = input().x; return x > .45 ? 1 : x < -.45 ? -1 : 0; };
 function act(button) {
-  const r = press(me.f, button, stickDir(), me.pos.distanceTo(foe.pos));
+  if (!jai) return;
+  const r = press(me.f, button, stickDir());
   if (r?.move) begin(r.move);
   else if (r?.fail === 'penat') pop('Penat!', 'warn');
-  else if (r?.fail === 'jauh') pop('Dekat lagi!', 'warn');
 }
 // Range assist: an attack started a little out of range steps in by the
 // gap before its first hit lands, so near misses connect.
-const IDEAL = .85, ASSIST = .9;
+const ASSIST = .9;
 function begin(key) {
-  me.fwd = 0; pop(MOVES[key].name); me.assist = 0;
-  const h = MOVES[key].hits.find(h => !h.auto); if (!h) return;
-  const ideal = IDEAL + sample(MOVES[key].keys, h.t[0]).fwd[0], gap = me.pos.distanceTo(foe.pos) - ideal;
-  if (gap > 0 && gap < ASSIST) { me.assist = gap / h.t[0]; me.assistUntil = h.t[0]; }
+  const m = MOVES[key]; pop(m.name); me.assist = 0;
+  const first = m.hits[0]?.t[0] ?? m.throw?.at; if (first === undefined || m.throw) return;
+  const gap = me.pos.distanceTo(foe.pos) - m.reach;
+  if (gap > 0 && gap < ASSIST) { me.assist = gap / first; me.assistUntil = first; }
 }
 // Stick or keys as one analogue input; keys walk, Shift runs.
 function input() {
@@ -97,10 +84,10 @@ function input() {
 }
 let ctx = null;
 function audio() { $('help').hidden = true; if (!ctx) try { ctx = new AudioContext(); } catch { ctx = false; } }
-function thump(heavy) {
+function thump(heavy, blocked) {
   if (!ctx) return; const n = ctx.sampleRate * .12, buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
   for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3);
-  const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); s.buffer = buf; f.type = 'lowpass'; f.frequency.value = heavy ? 700 : 1400; g.gain.value = heavy ? .9 : .5;
+  const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); s.buffer = buf; f.type = blocked ? 'bandpass' : 'lowpass'; f.frequency.value = blocked ? 2600 : heavy ? 700 : 1400; g.gain.value = heavy ? .9 : .5;
   s.connect(f).connect(g).connect(ctx.destination); s.start();
 }
 const v3 = new T.Vector3();
@@ -109,139 +96,142 @@ function floatText(text, at, cls) {
   el.style.left = `${(v3.x * .5 + .5) * innerWidth}px`; el.style.top = `${(-v3.y * .5 + .5) * innerHeight}px`; $('hud').append(el); setTimeout(() => el.remove(), 800);
 }
 
-// ---- hits
-const SLACK = .07, done = new Set(), TARGETS = [['head', .17, 'head'], ['chest', .22, 'body'], ['hips', .2, 'body'], ['kneeL', .15, 'low'], ['kneeR', .15, 'low']];
+// ---- hits: strike points are swept from the last frame, so a fast swing
+// cannot pass through a target between frames.
+const SLACK = .05, done = new Set();
 let stop = 0, shake = 0;
-const pt = new T.Vector3(), tp = new T.Vector3();
+const tp = new T.Vector3(), sp = new T.Vector3();
+function touch(points, prev, r) {
+  for (const [name, tr, zone] of TARGETS) {
+    foe.fig.point(name, tp);
+    for (let i = 0; i < points.length; i++) for (let s = 0; s <= 1; s += .25) {
+      sp.copy(prev?.[i] ?? points[i]).lerp(points[i], s);
+      if (sp.distanceTo(tp) < tr + r + SLACK) return zone;
+    }
+  }
+  return null;
+}
+function land(hit, d, at) {
+  const { dmg, react } = receive(foe.s, hit), blocked = react === 'block' || react === 'break';
+  foe.flash = 1; foe.knock.addScaledVector(d, hit.knock * (blocked ? 1 : 2.5));
+  stop = hit.heavy ? .12 : .05; shake = hit.heavy ? .12 : .04; thump(hit.heavy || dmg >= 9, react === 'block');
+  combo = now - comboAt < 1.1 ? combo + 1 : 1; comboAt = now;
+  floatText(react === 'block' ? 'Tahan -' + dmg : '-' + dmg, at, hit.heavy ? 'big' : '');
+  if (react === 'break') pop('Pecah tahan!', 'warn');
+  if (combo > 1) { $('combo').textContent = `${combo} HIT COMBO`; $('combo').hidden = false; }
+  if (react === 'ko') pop('K.O.!', 'ko');
+}
 function checkHits(d) {
+  const cur = {};
   for (const h of activeHits(me.f)) {
-    const id = me.f.seq + ':' + h.i; if (done.has(id) || foe.down >= 0) continue;
-    let zone = null;
-    if (h.auto) zone = foe.hold > .5 ? h.zone : null;
-    else { me.m.point(h.part, pt); for (const [name, r, z] of TARGETS) if (pt.distanceTo(foe.m.point(name, tp)) < r + SLACK) { zone = z; break; } }
-    if (!zone) continue;
-    done.add(id); foe.hp = Math.max(0, foe.hp - h.dmg); foe.react = PARTNER[zone]; foe.rw = 1; foe.flash = 1;
-    foe.knock.addScaledVector(d, h.knock * 4); stop = h.heavy ? .12 : .05; shake = h.heavy ? .12 : .04; thump(h.heavy || h.dmg >= 9);
-    combo = now - comboAt < 1.1 ? combo + 1 : 1; comboAt = now;
-    floatText('-' + h.dmg, foe.m.point(zone === 'low' ? 'kneeL' : zone === 'head' ? 'head' : 'chest', tp), h.heavy ? 'big' : '');
-    if (combo > 1) { $('combo').textContent = `${combo} HIT COMBO`; $('combo').hidden = false; }
-    if (foe.hp <= 0) { foe.down = 0; pop('K.O.!', 'ko'); }
+    const pts = cur[h.part] ??= jai.strike(h.part), id = me.f.seq + ':' + h.i;
+    if (done.has(id) || floored(foe.s)) continue;
+    const zone = touch(pts, me.prev[h.part], PARTS[h.part].r); if (!zone) continue;
+    done.add(id); land(h, d, foe.fig.point(zone === 'low' ? 'shinL' : zone === 'head' ? 'head' : 'chest', new T.Vector3()));
+  }
+  // Keep every part's points for the next frame's sweep.
+  for (const p of Object.keys(PARTS)) me.prev[p] = cur[p] ?? jai.strike(p);
+}
+// Thrown chalk: an arc from the hand.
+const chalks = [], chalkGeo = new T.CylinderGeometry(.015, .015, .09, 8), chalkMat = toon(0xf4f1e8);
+function throwChalk(d) {
+  const c = MOVES.throw.throw, mesh = new T.Mesh(chalkGeo, chalkMat); mesh.position.copy(jai.strike('handR')[0]); scene.add(mesh);
+  chalks.push({ mesh, v: d.clone().multiplyScalar(c.speed).setY(1.2), life: 1.5, hit: { dmg: c.dmg, knock: c.knock } });
+}
+function flyChalk(dt, d) {
+  for (let i = chalks.length - 1; i >= 0; i--) {
+    const c = chalks[i]; c.v.y -= 6 * dt; c.mesh.position.addScaledVector(c.v, dt); c.mesh.rotation.x += dt * 25; c.life -= dt;
+    const zone = floored(foe.s) ? null : touch([c.mesh.position], null, .03);
+    if (zone) land(c.hit, d, c.mesh.position.clone());
+    if (zone || c.life < 0 || c.mesh.position.y < 0) { scene.remove(c.mesh); chalks.splice(i, 1); }
   }
 }
 
 // ---- loop
 // Top speeds at full stick; a light push walks. Speed rises with the push.
-const SPEED = { fwd: 3.4, back: 1.8, side: 2.2, guard: .8 }, FREQ = 2.1, DEAD = .12;
-const d = new T.Vector3(), n = new T.Vector3(), want = new T.Vector3(), camPos = new T.Vector3(0, 1.4, 4.5), look = new T.Vector3(0, 1, 0);
-const xw = new T.Vector3(), zw = new T.Vector3(), held = new T.Vector3();
-// Standing by: weight rocks between the feet, the head and hands drift,
-// knees give a little; livelier as effort builds.
-function sway(p, effort) {
-  const a = .6 + .6 * effort, w = Math.sin(now * 1.7), b = Math.sin(now * 3.4 + 1);
-  p.hips[0] -= (.012 + .01 * effort) * (1 + b) / 2; p.hips[2] += 4 * a * w; p.hips[3] += 1.5 * a * w;
-  p.chest[1] -= 2 * a * w; p.head[0] += 2 * a * Math.sin(now * 2.3); p.head[1] += 2.5 * a * Math.sin(now * 1.3);
-  p.hL[0] += .015 * a * Math.sin(now * 2.1); p.hL[1] += .02 * a * Math.sin(now * 2.6 + 2); p.hR[1] += .015 * a * Math.sin(now * 2.2 + 4);
-  return p;
+const SPEED = { fwd: 3.4, back: 1.8, side: 2.2, guard: .8 }, DEAD = .12;
+const d = new T.Vector3(), n = new T.Vector3(), want = new T.Vector3(), camPos = new T.Vector3(0, 1.4, 4.5), look = new T.Vector3(0, 1, 0), pv = new T.Vector3();
+// Apply a move's root motion since the last frame, turned to face `yaw`.
+function travel(o, fig, m, t, key, yaw) {
+  if (o.key !== key) { o.key = key; o.path.set(0, 0, 0); }
+  fig.path(m, t, pv); const dx = pv.x - o.path.x, dz = pv.z - o.path.z; o.path.copy(pv);
+  const c = Math.cos(yaw), s = Math.sin(yaw);
+  o.pos.x += (dx * c + dz * s) * m.rm; o.pos.z += (-dx * s + dz * c) * m.rm;
 }
-// Breath on top of any pose: the chest lifts and opens, shoulders and hands
-// rise with it, the chin lifts a touch.
-function breath(p, v, m) {
-  p.spine[0] -= 2.5 * v; p.chest[0] -= 2 * v; p.head[0] += 1.5 * v;
-  for (const h of ['hL', 'hR']) p[h][1] += .018 * v;
-  p.hips[0] += .004 * v; m.breathe(v); return p;
-}
-function walk(p, v, dt) {
-  const speed = v.length(); if (speed < .05) return sway(p, me.breath.effort);
-  const run = T.MathUtils.smoothstep(speed, 1.6, 3), freq = FREQ * (1 + .55 * run);
-  me.phase += dt * Math.PI * 2 * freq * Math.min(1, .5 + speed / 2);
-  xw.set(Math.cos(me.yaw), 0, -Math.sin(me.yaw)); zw.set(Math.sin(me.yaw), 0, Math.cos(me.yaw));
-  const lx = v.dot(xw) / speed, lz = v.dot(zw) / speed, amp = speed / freq / 4;
-  for (const [f, o] of [['fL', 0], ['fR', Math.PI]]) {
-    const s = Math.sin(me.phase + o), c = Math.cos(me.phase + o);
-    p[f][0] += lx * amp * s; p[f][2] += lz * amp * s; p[f][1] += Math.max(0, c) * (.07 + .13 * run);
-  }
-  // Running: lower, lean into it, hands drop from the guard and pump.
-  p.hips[0] -= (.02 + .04 * run) * Math.abs(Math.sin(me.phase * 2)) + .03 * run;
-  p.spine[0] += 16 * run * Math.max(0, lz);
-  for (const [h, o] of [['hL', Math.PI], ['hR', 0]]) { p[h][1] -= .18 * run; p[h][2] += Math.sin(me.phase + o) * .16 * run * Math.max(0, lz); }
-  return p;
-}
+let jai = null;
 function step(dt) {
   now += dt;
   d.subVectors(foe.pos, me.pos).setY(0); const sep = d.length(); d.normalize(); n.set(-d.z, 0, d.x);
-  // Move
-  // Dynamic speed: past the dead zone, speed grows with the push (eased, so
-  // small pushes give fine steps and a full push runs).
-  const { x: jx, y: jy, m } = input(), push = Math.pow(Math.max(0, m - DEAD) / (1 - DEAD), 1.5), ux = m ? jx / m : 0, uy = m ? jy / m : 0;
+  // Move. Dynamic speed: past the dead zone, speed grows with the push
+  // (eased, so small pushes give fine steps and a full push runs).
+  const { x: jx, y: jy, m: push0 } = input(), push = Math.pow(Math.max(0, push0 - DEAD) / (1 - DEAD), 1.5), ux = push0 ? jx / push0 : 0, uy = push0 ? jy / push0 : 0;
   me.f.guard = (guardHeld || keys.has('KeyK') || keys.has('Space')) && !me.f.move;
   want.set(0, 0, 0);
-  if (!me.f.move && foe.hold <= 0) {
+  if (!me.f.move) {
     want.addScaledVector(d, ux * push * (ux > 0 ? SPEED.fwd : SPEED.back)).addScaledVector(n, -uy * push * SPEED.side);
     if (me.f.guard) want.clampLength(0, SPEED.guard);
   }
   me.vel.lerp(want, 1 - Math.exp(-dt * 10)); me.pos.addScaledVector(me.vel, dt);
   me.yaw = Math.atan2(d.x, d.z);
-  const started = tick(me.f, dt); if (started) begin(started);
-  // Pose
-  let p;
-  if (me.f.move) { p = sample(MOVES[me.f.move].keys, me.f.t); const f = p.fwd[0]; me.pos.addScaledVector(d, Math.max(0, f - me.fwd)); me.fwd = f; if (me.assist && me.f.t <= me.assistUntil + dt) me.pos.addScaledVector(d, me.assist * dt); }
-  else p = walk(mix(me.f.guard ? GUARD : STANCE, STANCE, 0), me.vel, dt);
-  breath(p, breathe(me.breath, dt, { moving: Math.min(1, me.vel.length() / SPEED.fwd), attacking: !!me.f.move && me.f.move !== 'taunt' }), me.m);
-  checkHits(d);
-  // Partner
-  const grab = grabbing(me.f); foe.hold = T.MathUtils.clamp(foe.hold + (grab ? dt * 6 : -dt * 4), 0, 1);
-  if (foe.hold > 0) {
-    held.set(.05, 0, .95).applyAxisAngle(T.Object3D.DEFAULT_UP, me.yaw).add(me.pos);
-    foe.pos.lerp(held, foe.hold); foe.yaw = me.yaw + Math.PI;
-  } else {
-    foe.pos.addScaledVector(foe.knock, dt); foe.yaw = Math.atan2(-d.x, -d.z);
+  const t0 = me.f.t, started = tick(me.f, dt); if (started) begin(started);
+  const m = me.f.move && MOVES[me.f.move];
+  if (m) {
+    // Root motion carries Jai in, but never closer than the move's reach.
+    const s0 = me.pos.distanceTo(foe.pos); travel(me, jai, m, me.f.t, me.f.seq, me.yaw);
+    const s1 = me.pos.distanceTo(foe.pos); if (m.reach && s1 < s0 && s1 < m.reach) me.pos.addScaledVector(d, -Math.min(s0 - s1, m.reach - s1));
+    if (me.assist && me.f.t <= me.assistUntil + dt) me.pos.addScaledVector(d, me.assist * dt);
+    if (m.throw && t0 < m.throw.at && me.f.t >= m.throw.at && !started) throwChalk(d);
   }
+  const speed = me.vel.length() * (me.vel.dot(d) < -.1 ? -1 : 1);
+  const breath = breathe(me.breath, dt, { moving: Math.min(1, me.vel.length() / SPEED.fwd), attacking: !!m });
+  jai.group.position.copy(me.pos); jai.group.rotation.y = me.yaw;
+  jai.drive(dt, { m, t: me.f.t, speed, guard: me.f.guard, breath, prop: m?.prop });
+  checkHits(d); flyChalk(dt, d);
+  // Partner
+  const was = foe.s.react, up = settle(foe.s, dt);
+  if (up === 'ko') pop('Bangun!');
+  const r = foe.s.react && REACT[foe.s.react];
+  if (r) { if (foe.s.react !== was || foe.s.t < foe.t) foe.key = null; travel(foe, foe.fig, r, foe.s.t, foe.s.react + '@' + foe.s.hp, foe.yaw); }
+  foe.t = foe.s.t;
+  foe.pos.addScaledVector(foe.knock, dt); foe.yaw = Math.atan2(-d.x, -d.z);
   foe.knock.multiplyScalar(Math.exp(-dt * 6));
   // Keep apart and inside the ring.
-  const gap = foe.pos.distanceTo(me.pos);
-  const minGap = me.f.move ? .45 : .62;
-  if (foe.hold <= 0 && gap < minGap) { v3.subVectors(me.pos, foe.pos).setY(0).normalize(); me.pos.addScaledVector(v3, minGap - gap); }
+  const gap = foe.pos.distanceTo(me.pos), minGap = floored(foe.s) ? .3 : me.f.move ? .5 : .65;
+  if (gap < minGap) { v3.subVectors(me.pos, foe.pos).setY(0).normalize(); me.pos.addScaledVector(v3, minGap - gap); }
   for (const o of [me, foe]) { const r = Math.hypot(o.pos.x, o.pos.z); if (r > RING - .35) o.pos.multiplyScalar((RING - .35) / r); }
-  if (foe.hold <= 0 && foe.down < 0) foe.pos.lerp(v3.copy(me.pos).addScaledVector(d, REST), dt * .25);
-  let q = mix(PARTNER.idle, foe.react, foe.rw); q.hips[0] += Math.sin(now * 2.2) * .006;
-  if (foe.hold > 0) q = mix(q, PARTNER.held, foe.hold);
+  if (!foe.s.react) foe.pos.lerp(v3.copy(me.pos).addScaledVector(d, REST), dt * .25);
   // The partner breathes harder after taking hits.
-  if (foe.rw > .5) foe.breath.effort = Math.min(1, foe.breath.effort + dt * 2);
-  breath(q, breathe(foe.breath, dt), foe.m);
-  foe.rw *= Math.exp(-dt * 6); foe.flash *= Math.exp(-dt * 14);
-  foe.m.root.rotation.x = 0;
-  if (foe.down >= 0) {
-    foe.down += dt; const fall = T.MathUtils.smoothstep(foe.down, 0, .55) * (1 - T.MathUtils.smoothstep(foe.down, 2.4, 3.1));
-    foe.m.root.rotation.x = -1.42 * fall; q = mix(q, PARTNER.head, fall);
-    if (foe.down > 3.1) { foe.down = -1; foe.hp = 100; pop('Bangun!'); }
-  }
-  // Apply
-  me.m.root.position.copy(me.pos); me.m.root.rotation.y = me.yaw; me.m.pose(p);
-  if (showAmir) { amir.update(); amir.a.face?.update(dt, false); }
-  foe.m.root.position.copy(foe.pos); foe.m.root.rotation.y = foe.yaw; foe.m.pose(q); foe.m.flash(foe.flash * .5);
+  if (foe.s.react) foe.breath.effort = Math.min(1, foe.breath.effort + dt * 2);
+  foe.flash *= Math.exp(-dt * 14);
+  foe.fig.group.position.copy(foe.pos); foe.fig.group.rotation.y = foe.yaw;
+  foe.fig.drive(dt, { m: r, t: foe.s.t, guard: foe.s.guard && !r, breath: breathe(foe.breath, dt), prop: r?.prop });
+  foe.fig.flash(foe.flash * .5);
   // Camera: side on, Jai left, pulled back as they separate.
   const mid = v3.addVectors(me.pos, foe.pos).multiplyScalar(.5);
-  want.copy(mid).addScaledVector(n, 2.3 + sep * .6).addScaledVector(d, -.5).setY(1.4);
+  want.copy(mid).addScaledVector(n, 2.4 + sep * .6).addScaledVector(d, -.5).setY(1.4);
   camPos.lerp(want, 1 - Math.exp(-dt * 4)); look.lerp(mid.setY(.92), 1 - Math.exp(-dt * 8));
   camera.position.copy(camPos); if (shake > 0) { camera.position.x += (Math.random() - .5) * shake; camera.position.y += (Math.random() - .5) * shake; shake = Math.max(0, shake - dt); }
   camera.lookAt(look);
-  // Close-up views for checks (window.brawler.debug.cam = 'side' | 'front').
-  if (debug.view) { const [a, b, h] = debug.view, c = me.pos.clone().setY(1.05); camera.position.copy(c).addScaledVector(d, a).addScaledVector(n, b).setY(h); camera.lookAt(c); }
-  else if (debug.zoom) { const h = amir.a.fists.L.localToWorld(new T.Vector3(0, .05, 0)); camera.position.copy(h).add(new T.Vector3(debug.zoom[0], .05, debug.zoom[1]).applyAxisAngle(T.Object3D.DEFAULT_UP, me.yaw).multiplyScalar(.45)); camera.lookAt(h); }
-  else if (debug.cam) { const c = me.pos.clone().setY(1.35); camera.position.copy(c).addScaledVector(debug.cam === 'side' ? n : d, 1.3).addScaledVector(debug.cam === 'side' ? d : n, debug.cam === 'side' ? .2 : 1.2); camera.lookAt(c.addScaledVector(d, .2)); }
+  // Close-up views for checks (window.brawler.debug.view = [back, side, height]).
+  if (debug.view) { const [a, b, h] = debug.view, c = me.pos.clone().lerp(foe.pos, .5).setY(1); camera.position.copy(c).addScaledVector(d, a).addScaledVector(n, b).setY(h); camera.lookAt(c); }
   // HUD
-  $('stam').style.width = `${me.f.stamina}%`; $('stam').classList.toggle('low', me.f.stamina < 20); $('hp').style.width = `${foe.hp}%`;
+  $('stam').style.width = `${me.f.stamina}%`; $('stam').classList.toggle('low', me.f.stamina < 20); $('hp').style.width = `${foe.s.hp}%`;
   if (popTimer > 0 && (popTimer -= dt) <= 0) $('pop').textContent = '';
   if (now - comboAt > 1.1) $('combo').hidden = true;
 }
 function resize() { inkViewport.set(innerWidth, innerHeight); renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 1 ? 62 : 42; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
-let last = performance.now(); const debug = { paused: false };
-renderer.setAnimationLoop(() => {
-  const t = performance.now(), dt = Math.min((t - last) / 1000, .05); last = t;
-  if (debug.paused) {} else if (stop > 0) stop -= dt; else step(dt);
-  renderer.render(scene, camera);
-});
-step(0); $('loading').hidden = true;
-// For automated checks: run frames and press buttons without a real clock.
-window.brawler = { get amir() { return amir; }, useAmir, act, step, me, foe, debug, input, dur: () => me.f.move ? MOVES[me.f.move].dur : 0, reach: (part, foeName) => me.m.point(part, pt).distanceTo(foe.m.point(foeName, tp)), TARGETS, set stick(v) { stick.x = v[0]; stick.y = v[1]; } };
+const debug = { paused: false };
+loadFighter(undefined, glbText).then(gltf => {
+  jai = createFighter(scene, gltf, { body: 0xd9a36c, joint: 0x5b3a28 });
+  foe.fig = createFighter(scene, gltf, { body: 0x8fa3b8, joint: 0x3e4a5c });
+  let last = performance.now();
+  renderer.setAnimationLoop(() => {
+    const t = performance.now(), dt = Math.min((t - last) / 1000, .05); last = t;
+    if (debug.paused) {} else if (stop > 0) stop -= dt; else step(dt);
+    renderer.render(scene, camera);
+  });
+  step(0); $('loading').hidden = true;
+  // For automated checks: run frames and press buttons without a real clock.
+  window.brawler = { act, step, me, foe, debug, jai, input, render: () => renderer.render(scene, camera), set stick(v) { stick.x = v[0]; stick.y = v[1]; } };
+}).catch(e => { console.error(e); $('loading').textContent = 'Gagal muat watak. Cuba muat semula.'; });

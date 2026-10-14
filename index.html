@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-  <title>Project High School · v0.5.3</title>
+  <title>Project High School · v0.6.0</title>
   <style>
     :root { --ink: #1f1c2b; --paper: #f4ecdc; --red: #d8322a; --gold: #e8a83a; --stam: #6cc4a1; --line: #f4ecdc40; }
     html, body { margin: 0; height: 100%; background: var(--ink); color: var(--paper); font: 600 14px/1.2 system-ui, sans-serif; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
@@ -34,7 +34,7 @@
     #list { position: fixed; top: calc(76px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: min(340px, calc(100% - 32px)); max-height: calc(100% - 96px); overflow: auto; background: #1f1c2bf2; border: 2px solid var(--line); border-radius: 12px; padding: 10px 14px; font-weight: 500; }
     #list table { border-collapse: collapse; width: 100%; } #list td { padding: 4px 0; } #list td:first-child { white-space: nowrap; padding-right: 12px; font-weight: 800; color: var(--gold); }
     #list p { margin: 8px 0 0; font-size: 12px; opacity: .85; }
-    #tiredBtn, #modelBtn { font: 700 12px system-ui, sans-serif; color: var(--ink); background: var(--gold); border: 0; border-radius: 999px; padding: 5px 10px; margin-right: 6px; }
+    #tiredBtn, #guardBtn { font: 700 12px system-ui, sans-serif; color: var(--ink); background: var(--gold); border: 0; border-radius: 999px; padding: 5px 10px; margin-right: 6px; }
     #stick { position: fixed; left: 0; top: 0; width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--line); background: #0003; pointer-events: none; }
     #knob { position: absolute; left: 38px; top: 38px; width: 44px; height: 44px; border-radius: 50%; background: #f4ecdc99; transition: background .1s; } #knob.run { background: var(--gold); }
     #help { position: fixed; left: calc(16px + env(safe-area-inset-left, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); max-width: 40%; font-weight: 500; font-size: 12px; opacity: .6; }
@@ -58,30 +58,32 @@
   <div id="stick" hidden><div id="knob"></div></div>
   <p id="help">Sentuh kiri skrin untuk joystick. Tolak sikit jalan, tolak habis lari.<br>Keyboard: WASD gerak, Shift lari, I J L K butang.</p>
   <div id="pad" aria-label="Butang serangan">
-    <button data-act="tendang" class="tri" style="grid-area:t"><span>△</span>Tendang<kbd>I</kbd></button>
-    <button data-act="tumbuk" class="sq" style="grid-area:s"><span>□</span>Tumbuk<kbd>J</kbd></button>
-    <button data-act="kasar" class="ci" style="grid-area:c"><span>○</span>Kasar<kbd>L</kbd></button>
+    <button data-act="berat" class="tri" style="grid-area:t"><span>△</span>Berat<kbd>I</kbd></button>
+    <button data-act="tetak" class="sq" style="grid-area:s"><span>□</span>Tetak<kbd>J</kbd></button>
+    <button data-act="tong" class="ci" style="grid-area:c"><span>○</span>Tong<kbd>L</kbd></button>
     <button data-act="tahan" class="cr" style="grid-area:x"><span>✕</span>Tahan<kbd>K</kbd></button>
   </div>
   <button id="listBtn" aria-expanded="false" aria-controls="list">Senarai gerak</button>
   <div id="list" hidden>
     <table>
-      <tr><td>□ □ □</td><td>Jab, straight, <b>hayun</b></td></tr>
-      <tr><td>← □</td><td>Uppercut</td></tr>
-      <tr><td>△</td><td><b>Tendang hayun</b> ke kepala</td></tr>
-      <tr><td>→ △</td><td>Push kick</td></tr>
-      <tr><td>← △</td><td>Sepak bawah</td></tr>
-      <tr><td>○ dekat</td><td>Kepit kepala</td></tr>
-      <tr><td>○ jauh</td><td>Rempuh</td></tr>
-      <tr><td>→ ○</td><td>Lutut</td></tr>
-      <tr><td>← ○</td><td>Ejek (isi stamina)</td></tr>
-      <tr><td>✕ tahan</td><td>Tutup muka</td></tr>
+      <tr><td>□ □ □</td><td>Tetak, tetak balik, <b>tetak penamat</b></td></tr>
+      <tr><td>→ □</td><td>Terkam (meluru dengan kayu)</td></tr>
+      <tr><td>← □</td><td>Hook</td></tr>
+      <tr><td>△</td><td><b>Combo berat</b> (3 libasan)</td></tr>
+      <tr><td>→ △</td><td>Combo kayu (4 libasan)</td></tr>
+      <tr><td>← △</td><td>Baling kapur</td></tr>
+      <tr><td>○</td><td>Hentak tong</td></tr>
+      <tr><td>→ ○</td><td>Rempuh tong</td></tr>
+      <tr><td>← ○</td><td>Cakar</td></tr>
+      <tr><td>✕ tahan</td><td>Tutup dengan tong</td></tr>
+      <tr><td>→ ✕</td><td>Gelongsor ke kaki</td></tr>
+      <tr><td>← ✕</td><td>Lompat</td></tr>
     </table>
-    <p><button id="modelBtn">Watak: Amir</button> Tukar antara model Amir dan mannequin.</p>
+    <p><button id="guardBtn">Kawan: terbuka</button> Kawan latih tahan dengan tong. Pukulan berat pecahkan tahanan.</p>
     <p><button id="tiredBtn">Penat: tak</button> Stamina tak terhad masa latihan. Tekan untuk hidupkan.</p>
     <p>→ mara ke lawan, ← undur. Tolak joystick sikit untuk jalan perlahan, tolak habis untuk lari.</p>
   </div>
   <div id="loading">Memuatkan gelanggang…</div>
-  <script type="module" src="./src/brawler-view.js?v=0.5.2"></script>
+  <script type="module" src="./src/brawler-view.js?v=0.6.0"></script>
 </body>
 </html>
